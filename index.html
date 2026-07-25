@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>웨이트 트래커</title>
+<meta name="theme-color" content="#14161A" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; background:#14161A; color:#ECEEF2; font-family: system-ui, -apple-system, sans-serif; }
+  button, input { font-family: inherit; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  #app { min-height: 100vh; padding-bottom: 24px; }
+  .navBtn { width:36px; height:36px; border-radius:8px; background:#1E222A; border:1px solid #262B34; color:#ECEEF2; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .card { background:#1E222A; border:1px solid #262B34; border-radius:10px; overflow:hidden; }
+  .exRow { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:8px; cursor:pointer; }
+  .exRow.done { background: rgba(76,175,125,0.12); border:1px solid #4CAF7D; }
+  .exRow:not(.done) { background:#262B34; border:1px solid transparent; }
+  .checkbox { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; }
+  .checkbox.done { background:#4CAF7D; }
+  .checkbox:not(.done) { border:1px solid #545C6B; }
+  .calCell { aspect-ratio:1; background:#1E222A; border:1px solid #262B34; border-radius:8px; color:#ECEEF2; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; padding:2px; gap:2px; }
+  .calCell.today { border:2px solid #F5C518; }
+  input[type=number] { width:64px; background:#14161A; border:1px solid #333944; border-radius:6px; color:#ECEEF2; padding:4px 8px; }
+  .restBar { position:fixed; bottom:0; left:0; right:0; background:#1E222A; border-top:1px solid #333944; padding:14px 16px; box-shadow:0 -4px 20px rgba(0,0,0,0.4); }
+  svg.icon { flex-shrink:0; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="app.js"></script>
+</body>
+</html>

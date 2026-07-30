@@ -1,4 +1,4 @@
-const CACHE_NAME = "workout-tracker-v8";
+const CACHE_NAME = "workout-tracker-v9";
 const ASSETS = ["./index.html", "./app.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {

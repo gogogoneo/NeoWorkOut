@@ -210,6 +210,7 @@ const state = {
   pendingNext: null, // exId waiting for user confirmation (block mode transition)
   popupCountdown: 5,
   popupHandle: null,
+  order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
 const DEFAULT_UNSELECTED = ["lateral", "reardelt", "forearm", "tricep"];
@@ -224,6 +225,38 @@ function toggleSelection(dayType, exId) {
   const next = { ...state.selection, [dayType]: { ...(state.selection[dayType] || {}), [exId]: !isSelected(dayType, exId) } };
   state.selection = next;
   lsSet("wt_exercise_selection", next);
+  render();
+}
+
+function getOrder(dayType) {
+  const natural = EXERCISES[dayType].map((e) => e.id);
+  const stored = state.order[dayType];
+  if (!stored) return natural;
+  const known = stored.filter((id) => natural.includes(id));
+  const missing = natural.filter((id) => !known.includes(id));
+  return [...known, ...missing];
+}
+
+function getOrderedExercises(dayType) {
+  const byId = {};
+  EXERCISES[dayType].forEach((e) => {
+    byId[e.id] = e;
+  });
+  return getOrder(dayType)
+    .map((id) => byId[id])
+    .filter(Boolean);
+}
+
+function moveExercise(dayType, exId, dir) {
+  const cur = getOrder(dayType);
+  const idx = cur.indexOf(exId);
+  const swapIdx = idx + dir;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= cur.length) return;
+  const next = [...cur];
+  [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+  const updated = { ...state.order, [dayType]: next };
+  state.order = updated;
+  lsSet("wt_exercise_order", updated);
   render();
 }
 
@@ -425,15 +458,21 @@ function speak(text) {
   try {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
+    const sentences = text
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     setTimeout(() => {
       try {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "ko-KR";
-        u.rate = 1.0;
         const voices = window.speechSynthesis.getVoices();
         const koVoice = voices.find((v) => v.lang === "ko-KR") || voices.find((v) => v.lang && v.lang.startsWith("ko"));
-        if (koVoice) u.voice = koVoice;
-        window.speechSynthesis.speak(u);
+        sentences.forEach((sentence) => {
+          const u = new SpeechSynthesisUtterance(sentence);
+          u.lang = "ko-KR";
+          u.rate = 1.0;
+          if (koVoice) u.voice = koVoice;
+          window.speechSynthesis.speak(u);
+        });
       } catch (e) {}
     }, 60);
   } catch (e) {}
@@ -448,7 +487,7 @@ setInterval(() => {
       window.speechSynthesis.resume();
     }
   } catch (e) {}
-}, 8000);
+}, 12000);
 
 function toggleVoice() {
   state.voiceEnabled = !state.voiceEnabled;
@@ -472,8 +511,9 @@ function announceSet(ex, setIdx) {
     detail = `${set.value}초 유지입니다`;
   }
   if (setIdx === 0) {
+    const tipPart = disp.tip ? ` ${disp.tip}` : "";
     const breathPart = disp.breath ? ` 숨은, ${disp.breath}.` : "";
-    speak(`${disp.name}입니다.${breathPart} ${detail}.`);
+    speak(`${disp.name}입니다.${tipPart}${breathPart} ${detail}.`);
   } else {
     speak(`${detail}.`);
   }
@@ -762,16 +802,13 @@ function exerciseCardHTML(ex, index) {
 
 function dayHTML() {
   const dayType = getDayType(state.selectedDate);
-  const allExercises = EXERCISES[dayType];
+  const allExercises = getOrderedExercises(dayType);
   const exercises = allExercises.filter((ex) => isSelected(dayType, ex.id));
   const info = DAY_INFO[dayType];
   const totalSets = exercises.reduce((a, ex) => a + getConfig(ex).sets.length, 0);
   const doneSets = Object.values(state.completed).filter(Boolean).length;
   const dateObj = parseLocalDate(state.selectedDate);
   const dateLabel = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${getDayLabel(state.selectedDate)})`;
-  const isCoreEx = (e) => e.id.startsWith("plank") || e.id.startsWith("cablecrunch") || e.id.startsWith("hangingraise") || e.id.startsWith("sideplank");
-  const mainExercises = exercises.filter((e) => !isCoreEx(e));
-  const coreExercises = exercises.filter(isCoreEx);
   const blockRunning = !!state.activeExerciseId;
 
   const selectionHTML = `
@@ -787,15 +824,21 @@ function dayHTML() {
         state.selectionOpen
           ? `<div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
               ${allExercises
-                .map((ex) => {
+                .map((ex, idx) => {
                   const checked = isSelected(dayType, ex.id);
-                  return `<label data-toggleselex="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:6px 0;border-bottom:1px solid #262B34">
-                      <div style="width:20px;height:20px;margin-top:1px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#4CAF7D" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div>
-                      <div style="flex:1">
-                        <div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${ex.name}</div>
-                        <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
+                  return `<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #262B34">
+                      <label data-toggleselex="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;flex:1">
+                        <div style="width:20px;height:20px;margin-top:1px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#4CAF7D" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div>
+                        <div style="flex:1">
+                          <div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${ex.name}</div>
+                          <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
+                        </div>
+                      </label>
+                      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+                        <button data-moveex="${ex.id}|-1" ${idx === 0 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === 0 ? "#3A3F49" : "#8A93A3"};cursor:${idx === 0 ? "default" : "pointer"};font-size:12px">⌃</button>
+                        <button data-moveex="${ex.id}|1" ${idx === allExercises.length - 1 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === allExercises.length - 1 ? "#3A3F49" : "#8A93A3"};cursor:${idx === allExercises.length - 1 ? "default" : "pointer"};font-size:12px">⌄</button>
                       </div>
-                    </label>`;
+                    </div>`;
                 })
                 .join("")}
             </div>`
@@ -868,8 +911,7 @@ function dayHTML() {
         ${selectionHTML}
       </div>
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
-        ${mainExercises.length > 0 ? `<button data-blockstart="main" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:8px">▶ ${info.label} 웨이트 전체 자동 진행 (${mainExercises.length}종목)</button>` : ""}
-        ${coreExercises.length > 0 ? `<button data-blockstart="core" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#3E8FB0"};border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:8px">▶ 코어 전체 자동 진행 (${coreExercises.length}종목)</button>` : ""}
+        ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:8px">▶ ${info.label} 오늘 운동 전체 자동 진행 (${exercises.length}종목)</button>` : ""}
         <div style="font-size:12px;color:#8A93A3;text-align:center;margin-top:-2px">위 버튼은 세트별 30초 작업 + 운동별 휴식시간까지 전부 자동으로 이어집니다. 아래에서 운동 하나씩 개별로 시작할 수도 있어요.</div>
       </div>
       <div style="height:4px"></div>
@@ -1282,6 +1324,14 @@ function attachHandlers() {
     };
   });
 
+  document.querySelectorAll("[data-moveex]").forEach((el) => {
+    el.onclick = () => {
+      const [exId, dir] = el.getAttribute("data-moveex").split("|");
+      const dayType = getDayType(state.selectedDate);
+      moveExercise(dayType, exId, Number(dir));
+    };
+  });
+
   document.querySelectorAll("[data-startex]").forEach((el) => {
     el.onclick = () => {
       const dayType = getDayType(state.selectedDate);
@@ -1301,13 +1351,8 @@ function attachHandlers() {
   document.querySelectorAll("[data-blockstart]").forEach((el) => {
     el.onclick = () => {
       const dayType = getDayType(state.selectedDate);
-      const exercises = EXERCISES[dayType].filter((e) => isSelected(dayType, e.id));
-      const kind = el.getAttribute("data-blockstart");
-      const list =
-        kind === "main"
-          ? exercises.filter((e) => !(e.id.startsWith("plank") || e.id.startsWith("cablecrunch") || e.id.startsWith("hangingraise") || e.id.startsWith("sideplank")))
-          : exercises.filter((e) => e.id.startsWith("plank") || e.id.startsWith("cablecrunch") || e.id.startsWith("hangingraise") || e.id.startsWith("sideplank"));
-      startBlock(list);
+      const exercises = getOrderedExercises(dayType).filter((e) => isSelected(dayType, e.id));
+      startBlock(exercises);
     };
   });
 

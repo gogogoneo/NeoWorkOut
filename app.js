@@ -29,7 +29,18 @@ const EXERCISES = {
       { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
     { id: "cablecrunch1", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
       { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-    { id: "sideplank1", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] },
+    { id: "woodchop1", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+      ] },
+    { id: "sideplank1", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+      ] },
     { id: "plank1", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
@@ -65,8 +76,19 @@ const EXERCISES = {
       { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
     { id: "cablecrunch2", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
       { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-        { id: "sideplank2", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] },
-{ id: "plank2", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
+        { id: "woodchop2", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+      ] },
+{ id: "sideplank2", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+      ] },
+    { id: "plank2", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
   ],
@@ -75,8 +97,19 @@ const EXERCISES = {
       { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
     { id: "cablecrunch3", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
       { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-        { id: "sideplank3", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] },
-{ id: "plank3", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
+        { id: "woodchop3", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+        { value: 15, reps: 12, rest: 45 },
+      ] },
+{ id: "sideplank3", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+        { value: 30, reps: null, rest: 30 },
+      ] },
+    { id: "plank3", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
   ],
@@ -783,7 +816,10 @@ function exerciseCardHTML(ex, index) {
         <button data-resetex="${ex.id}" style="background:none;border:none;color:#8A93A3;font-size:14px;cursor:pointer">다시하기</button>
       </div>`;
   } else {
-    bodyHTML = `<button data-startex="${ex.id}" style="width:100%;background:#262B34;border:1px solid #333944;border-radius:8px;padding:12px;font-size:16px;font-weight:600;color:#ECEEF2;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">▶ ${doneCount > 0 ? `이어하기 (${doneCount}/${effSets.length})` : "이 운동 시작"}</button>`;
+    bodyHTML = `<div style="display:flex;gap:8px">
+        <button data-startex="${ex.id}" style="flex:1;background:#262B34;border:1px solid #333944;border-radius:8px;padding:12px;font-size:15px;font-weight:600;color:#ECEEF2;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">▶ ${doneCount > 0 ? `이어하기 (${doneCount}/${effSets.length})` : "이 운동만"}</button>
+        <button data-startblockfrom="${ex.id}" ${state.activeExerciseId ? "disabled" : ""} style="flex:1;background:${state.activeExerciseId ? "#1E222A" : "#3E8FB0"};border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:600;color:${state.activeExerciseId ? "#8A93A3" : "#14161A"};cursor:${state.activeExerciseId ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:6px">⏩ 여기부터 자동진행</button>
+      </div>`;
   }
 
   return `<div class="card" style="border-color:${exDone ? "#4CAF7D" : isActive ? "#F5C518" : "#262B34"}">
@@ -1169,6 +1205,14 @@ function startBlock(list) {
   startTimerInterval();
 }
 
+function startBlockFrom(exId) {
+  const dayType = getDayType(state.selectedDate);
+  const exercises = getOrderedExercises(dayType).filter((e) => isSelected(dayType, e.id));
+  const idx = exercises.findIndex((e) => e.id === exId);
+  if (idx === -1) return;
+  startBlock(exercises.slice(idx));
+}
+
 function resetExercise(ex) {
   const setCount = getConfig(ex).sets.length;
   for (let idx = 0; idx < setCount; idx++) delete state.completed[`${ex.id}-${idx}`];
@@ -1337,6 +1381,12 @@ function attachHandlers() {
       const dayType = getDayType(state.selectedDate);
       const ex = EXERCISES[dayType].find((e) => e.id === el.getAttribute("data-startex"));
       if (ex) startExercise(ex);
+    };
+  });
+
+  document.querySelectorAll("[data-startblockfrom]").forEach((el) => {
+    el.onclick = () => {
+      startBlockFrom(el.getAttribute("data-startblockfrom"));
     };
   });
 

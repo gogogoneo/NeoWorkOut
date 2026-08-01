@@ -240,9 +240,7 @@ const state = {
     goal: "건강유지",
     issues: [],
   }),
-  pendingNext: null, // exId waiting for user confirmation (block mode transition)
-  popupCountdown: 5,
-  popupHandle: null,
+
   order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
@@ -583,29 +581,8 @@ function updateSummary(dateStr, isComplete) {
 // ---------- Render: root ----------
 function render() {
   const app = document.getElementById("app");
-  app.innerHTML = (state.view === "calendar" ? calendarHTML() : dayHTML()) + pendingNextModalHTML();
+  app.innerHTML = state.view === "calendar" ? calendarHTML() : dayHTML();
   attachHandlers();
-}
-
-function pendingNextModalHTML() {
-  if (!state.pendingNext) return "";
-  const dayType = getDayType(state.selectedDate);
-  const nextEx = EXERCISES[dayType].find((e) => e.id === state.pendingNext);
-  if (!nextEx) return "";
-  const hasSub = nextEx.substitutes && nextEx.substitutes.length > 0;
-  return `
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px">
-      <div style="background:#1E222A;border:1px solid #333944;border-radius:14px;padding:20px;max-width:380px;width:100%">
-        <div style="font-size:13px;color:#8A93A3;margin-bottom:4px">다음 운동</div>
-        <div style="font-size:21px;font-weight:700;margin-bottom:16px">${nextEx.name}</div>
-        <button id="pendingContinueBtn" style="width:100%;background:#F5C518;color:#14161A;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;margin-bottom:8px;cursor:pointer">▶ 이대로 계속 진행 (${state.popupCountdown}초 후 자동 진행)</button>
-        ${
-          hasSub
-            ? `<button id="pendingSubBtn" style="width:100%;background:#262B34;border:1px solid #333944;border-radius:10px;padding:14px;font-size:15px;color:#ECEEF2;cursor:pointer">🔁 기구 사용중 · ${nextEx.substitutes[0].name}(으)로 대체</button>`
-            : ""
-        }
-      </div>
-    </div>`;
 }
 
 // ---------- Calendar view ----------
@@ -1065,11 +1042,14 @@ function handleSetTimerFinish(t) {
         state.timer = null;
         return;
       }
-      state.activeExerciseId = null;
-      state.timer = null;
-      state.pendingNext = nextEx.id;
-      speak(`다음 운동은 ${getExDisplay(nextEx).name}입니다.`);
-      startPendingNextCountdown();
+      const setCount = getConfig(nextEx).sets.length;
+      let idx = 0;
+      while (idx < setCount && state.completed[`${nextEx.id}-${idx}`]) idx++;
+      if (idx >= setCount) idx = 0;
+      state.activeExerciseId = nextEx.id;
+      state.activeSetIdx = idx;
+      announceSet(nextEx, idx);
+      state.timer = makeWorkTimer(nextEx, idx);
     } else {
       speak("운동을 마쳤습니다. 수고하셨습니다.");
       state.activeExerciseId = null;
@@ -1102,47 +1082,6 @@ function handleSetTimerFinish(t) {
       startNextInQueueOrStop();
     }
   }
-}
-
-function startPendingNextCountdown() {
-  clearInterval(state.popupHandle);
-  state.popupCountdown = 5;
-  state.popupHandle = setInterval(() => {
-    state.popupCountdown -= 1;
-    if (state.popupCountdown <= 0) {
-      clearInterval(state.popupHandle);
-      confirmPendingNext(false);
-      return;
-    }
-    render();
-  }, 1000);
-}
-
-function confirmPendingNext(useSub) {
-  if (!state.pendingNext) return;
-  clearInterval(state.popupHandle);
-  const exId = state.pendingNext;
-  state.pendingNext = null;
-  if (useSub) {
-    state.substituted = { ...state.substituted, [exId]: true };
-    lsSet("wt_substituted", state.substituted);
-  }
-  const dayType = getDayType(state.selectedDate);
-  const ex = EXERCISES[dayType].find((e) => e.id === exId);
-  if (!ex) {
-    render();
-    return;
-  }
-  const setCount = getConfig(ex).sets.length;
-  let idx = 0;
-  while (idx < setCount && state.completed[`${ex.id}-${idx}`]) idx++;
-  if (idx >= setCount) idx = 0;
-  state.activeExerciseId = ex.id;
-  state.activeSetIdx = idx;
-  announceSet(ex, idx);
-  state.timer = makeWorkTimer(ex, idx);
-  render();
-  if (state.timer) startTimerInterval();
 }
 
 function finishActiveTimer() {
@@ -1346,11 +1285,6 @@ function attachHandlers() {
       toggleSubstitute(id);
     };
   });
-
-  const pendingContinueBtn = document.getElementById("pendingContinueBtn");
-  if (pendingContinueBtn) pendingContinueBtn.onclick = () => confirmPendingNext(false);
-  const pendingSubBtn = document.getElementById("pendingSubBtn");
-  if (pendingSubBtn) pendingSubBtn.onclick = () => confirmPendingNext(true);
 
   const selToggleEl = document.querySelector("[data-toggleselection]");
   if (selToggleEl) {

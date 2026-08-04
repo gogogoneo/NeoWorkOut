@@ -120,28 +120,31 @@ const CARDIO_OPTIONS = {
     {
       key: "stairs",
       label: "계단(스텝밀)",
+      type: "stairs",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "레벨 3~4" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "레벨 8~9 2분 ↔ 레벨 5 1분, 10회 반복" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "레벨 4" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 3 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highLevel: 8, highSeconds: 2 * 60, lowLevel: 5, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 4 } },
       ],
     },
     {
       key: "treadmill",
       label: "트레드밀",
+      type: "treadmill",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "경사 3도 · 시속 4km" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "경사 7도·6km/h 2분 ↔ 경사 3도·6km/h 1분, 10회 반복" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "경사 3도 · 시속 5km" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 4 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 7, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 5 } },
       ],
     },
     {
       key: "bike",
       label: "자전거",
+      type: "bike",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "저항 3~4 · 70rpm" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "저항 8~10·70~80rpm 2분 ↔ 저항 4~5·70rpm 1분, 10회 반복" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "저항 3~4 · 65~70rpm" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 60 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 150, highSeconds: 2 * 60, lowWatts: 80, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 60 } },
       ],
     },
   ],
@@ -149,28 +152,31 @@ const CARDIO_OPTIONS = {
     {
       key: "bike",
       label: "자전거",
+      type: "bike",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "저항 2~3 · 70rpm" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "저항 2~3 고정·90~100rpm 2분 ↔ 60~65rpm 1분, 10회 반복" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "저항 2~3 · 65~70rpm" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 40 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 90, highSeconds: 2 * 60, lowWatts: 50, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 40 } },
       ],
     },
     {
       key: "treadmill",
       label: "트레드밀",
+      type: "treadmill",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "경사 3도 · 시속 4km" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "경사 6도·6km/h 2분 ↔ 경사 3도·6km/h 1분, 10회 반복" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "경사 3도 · 시속 5km" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 4 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 5 } },
       ],
     },
     {
       key: "stairs",
       label: "계단(비추천)",
+      type: "stairs",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, detail: "레벨 3" },
-        { key: "main", label: "본운동", seconds: 30 * 60, detail: "레벨 4~5 2분 ↔ 레벨 3 1분, 10회 반복 (다리 부담 낮춘 버전)" },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, detail: "레벨 3" },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 3 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highLevel: 4, highSeconds: 2 * 60, lowLevel: 3, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 3 } },
       ],
     },
   ],
@@ -178,7 +184,8 @@ const CARDIO_OPTIONS = {
     {
       key: "walk",
       label: "가벼운 유산소",
-      phases: [{ key: "walk", label: "가벼운 유산소", seconds: 25 * 60, detail: "경사 0도 · 시속 5.5km, 부담 없는 페이스로" }],
+      type: "treadmill",
+      phases: [{ key: "walk", label: "가벼운 유산소", seconds: 25 * 60, fields: { incline: 0, speed: 5.5 } }],
     },
   ],
 };
@@ -227,6 +234,8 @@ const state = {
   selection: lsGet("wt_exercise_selection", {}), // { [dayType]: { [exId]: boolean } }
   selectionOpen: false,
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
+  cardioConfig: lsGet("wt_cardio_config", {}), // { "dayType:optionKey:phaseKey": { field: value } }
+  cardioEditOpen: {}, // { "dayType:optionKey": boolean }
   substituted: lsGet("wt_substituted", {}), // { [exId]: true }
   profile: lsGet("wt_profile", null),
   profileFormOpen: false,
@@ -300,6 +309,46 @@ function setCardioChoiceFor(dayType, key) {
   state.cardioChoice = next;
   lsSet("wt_cardio_choice", next);
   render();
+}
+
+function cardioFieldKey(dayType, optionKey, phaseKey) {
+  return `${dayType}:${optionKey}:${phaseKey}`;
+}
+
+function getCardioFields(dayType, optionKey, phase) {
+  const key = cardioFieldKey(dayType, optionKey, phase.key);
+  const stored = state.cardioConfig[key];
+  return stored ? { ...phase.fields, ...stored } : phase.fields;
+}
+
+function updateCardioField(dayType, optionKey, phaseKey, fieldName, rawValue) {
+  const key = cardioFieldKey(dayType, optionKey, phaseKey);
+  const next = { ...state.cardioConfig, [key]: { ...(state.cardioConfig[key] || {}), [fieldName]: rawValue === "" ? "" : Number(rawValue) } };
+  state.cardioConfig = next;
+  lsSet("wt_cardio_config", next);
+  render();
+}
+
+function buildCardioDetail(type, fields, isMain) {
+  if (type === "treadmill") {
+    if (isMain) {
+      return `경사 ${fields.highIncline}도·${fields.highSpeed}km/h ${Math.round(fields.highSeconds / 60)}분 ↔ 경사 ${fields.lowIncline}도·${fields.lowSpeed}km/h ${Math.round(fields.lowSeconds / 60)}분, ${fields.reps}회 반복`;
+    }
+    return `경사 ${fields.incline}도 · 시속 ${fields.speed}km`;
+  }
+  if (type === "bike") {
+    if (isMain) {
+      return `${fields.highWatts}W ${Math.round(fields.highSeconds / 60)}분 ↔ ${fields.lowWatts}W ${Math.round(fields.lowSeconds / 60)}분, ${fields.reps}회 반복`;
+    }
+    return `${fields.watts}W`;
+  }
+  if (type === "stairs") {
+    if (isMain) {
+      return `레벨 ${fields.highLevel} ${Math.round(fields.highSeconds / 60)}분 ↔ 레벨 ${fields.lowLevel} ${Math.round(fields.lowSeconds / 60)}분, ${fields.reps}회 반복`;
+    }
+    return `레벨 ${fields.level}`;
+  }
+  return "";
 }
 
 function toggleSubstitute(exId) {
@@ -863,6 +912,10 @@ function dayHTML() {
   const cardioChoiceKey = getCardioChoice(dayType);
   const activeCardioOption = cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0];
   const cardioPhases = activeCardioOption.phases;
+  const cardioType = activeCardioOption.type;
+  const cardioEditKey = `${dayType}:${cardioChoiceKey}`;
+  const isCardioEditOpen = !!state.cardioEditOpen[cardioEditKey];
+  const cardioFieldStyle = "width:64px;background:#14161A;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:5px 4px;font-family:ui-monospace,monospace;font-size:13px;text-align:center;display:block;margin-top:3px";
   const cardioTabsHTML =
     cardioOptions.length > 1
       ? `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -874,22 +927,50 @@ function dayHTML() {
             .join("")}
         </div>`
       : "";
+
+  const cardioEditFieldHTML = (phase, fields, isMain) => {
+    if (!isCardioEditOpen) return "";
+    const inp = (label, fieldName, value) =>
+      `<label style="font-size:11px;color:#8A93A3">${label}<input type="number" data-cardiofield="${dayType}|${cardioChoiceKey}|${phase.key}|${fieldName}" value="${value}" style="${cardioFieldStyle}" /></label>`;
+    let inputs = "";
+    if (cardioType === "treadmill") {
+      inputs = isMain
+        ? inp("고강도 경사", "highIncline", fields.highIncline) + inp("고강도 속도", "highSpeed", fields.highSpeed) + inp("저강도 경사", "lowIncline", fields.lowIncline) + inp("저강도 속도", "lowSpeed", fields.lowSpeed)
+        : inp("경사(도)", "incline", fields.incline) + inp("속도(km/h)", "speed", fields.speed);
+    } else if (cardioType === "bike") {
+      inputs = isMain ? inp("고강도 W", "highWatts", fields.highWatts) + inp("저강도 W", "lowWatts", fields.lowWatts) : inp("목표 W", "watts", fields.watts);
+    } else if (cardioType === "stairs") {
+      inputs = isMain ? inp("고강도 레벨", "highLevel", fields.highLevel) + inp("저강도 레벨", "lowLevel", fields.lowLevel) : inp("레벨", "level", fields.level);
+    }
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${inputs}</div>`;
+  };
+
   const cardioHTML = `
     <div class="card" style="padding:14px;margin-top:4px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div class="mono" style="font-size:14px;color:#3E8FB0;width:22px">${pad(exercises.length + 1)}</div>
-        <div style="font-weight:700;font-size:16px">유산소</div>
+        <div style="font-weight:700;font-size:16px;flex:1">유산소</div>
+        <button data-togglecardioedit="${cardioEditKey}" style="background:none;border:none;color:#8A93A3;font-size:13px;cursor:pointer">${isCardioEditOpen ? "완료" : "✏️ 수정"}</button>
       </div>
       ${cardioTabsHTML}
       <div style="display:flex;flex-direction:column;gap:8px">
-        ${cardioPhases.map((p) => `
-          <button data-cardio="${p.key}" style="display:flex;justify-content:space-between;align-items:center;background:#262B34;border:1px solid #333944;border-radius:8px;padding:10px 12px;color:#ECEEF2;cursor:pointer;text-align:left;width:100%">
-            <div>
-              <div style="font-size:14px;font-weight:600">${p.label}</div>
-              <div style="font-size:12px;color:#8A93A3">${p.detail}</div>
-            </div>
-            <div class="mono" style="display:flex;align-items:center;gap:6px;color:#3E8FB0">${formatTime(p.seconds)} ▶</div>
-          </button>`).join("")}
+        ${cardioPhases
+          .map((p) => {
+            const fields = getCardioFields(dayType, cardioChoiceKey, p);
+            const isMain = p.key === "main";
+            const detail = buildCardioDetail(cardioType, fields, isMain);
+            return `<div>
+              <button data-cardio="${p.key}" style="display:flex;justify-content:space-between;align-items:center;background:#262B34;border:1px solid #333944;border-radius:8px;padding:10px 12px;color:#ECEEF2;cursor:pointer;text-align:left;width:100%">
+                <div>
+                  <div style="font-size:14px;font-weight:600">${p.label}</div>
+                  <div style="font-size:12px;color:#8A93A3">${detail}</div>
+                </div>
+                <div class="mono" style="display:flex;align-items:center;gap:6px;color:#3E8FB0">${formatTime(p.seconds)} ▶</div>
+              </button>
+              ${cardioEditFieldHTML(p, fields, isMain)}
+            </div>`;
+          })
+          .join("")}
       </div>
     </div>`;
 
@@ -1391,6 +1472,22 @@ function attachHandlers() {
       const key = el.getAttribute("data-cardiotab");
       const dayType = getDayType(state.selectedDate);
       setCardioChoiceFor(dayType, key);
+    };
+  });
+
+  const cardioEditToggleEl = document.querySelector("[data-togglecardioedit]");
+  if (cardioEditToggleEl) {
+    cardioEditToggleEl.onclick = () => {
+      const key = cardioEditToggleEl.getAttribute("data-togglecardioedit");
+      state.cardioEditOpen = { ...state.cardioEditOpen, [key]: !state.cardioEditOpen[key] };
+      render();
+    };
+  }
+
+  document.querySelectorAll("[data-cardiofield]").forEach((el) => {
+    el.onchange = () => {
+      const [dayType, optionKey, phaseKey, fieldName] = el.getAttribute("data-cardiofield").split("|");
+      updateCardioField(dayType, optionKey, phaseKey, fieldName, el.value);
     };
   });
 

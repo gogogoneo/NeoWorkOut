@@ -122,9 +122,9 @@ const CARDIO_OPTIONS = {
       label: "계단(스텝밀)",
       type: "stairs",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 3 } },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 5 } },
         { key: "main", label: "본운동", seconds: 30 * 60, fields: { highLevel: 8, highSeconds: 2 * 60, lowLevel: 5, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 4 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 5 } },
       ],
     },
     {
@@ -132,9 +132,9 @@ const CARDIO_OPTIONS = {
       label: "트레드밀",
       type: "treadmill",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 4 } },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 6 } },
         { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 7, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 5 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 6 } },
       ],
     },
     {
@@ -142,9 +142,9 @@ const CARDIO_OPTIONS = {
       label: "자전거",
       type: "bike",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 60 } },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 80 } },
         { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 150, highSeconds: 2 * 60, lowWatts: 80, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 60 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 80 } },
       ],
     },
   ],
@@ -154,9 +154,9 @@ const CARDIO_OPTIONS = {
       label: "자전거",
       type: "bike",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 40 } },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 50 } },
         { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 90, highSeconds: 2 * 60, lowWatts: 50, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 40 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 50 } },
       ],
     },
     {
@@ -164,9 +164,9 @@ const CARDIO_OPTIONS = {
       label: "트레드밀",
       type: "treadmill",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 4 } },
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 6 } },
         { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 5 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 6 } },
       ],
     },
     {

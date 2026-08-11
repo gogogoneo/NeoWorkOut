@@ -118,6 +118,16 @@ const EXERCISES = {
 const CARDIO_OPTIONS = {
   upper: [
     {
+      key: "running",
+      label: "러닝",
+      type: "treadmill",
+      phases: [
+        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 0, speed: 6 } },
+        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 0, highSpeed: 9, highSeconds: 2 * 60, lowIncline: 0, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 0, speed: 6 } },
+      ],
+    },
+    {
       key: "stairs",
       label: "계단(스텝밀)",
       type: "stairs",
@@ -129,7 +139,7 @@ const CARDIO_OPTIONS = {
     },
     {
       key: "treadmill",
-      label: "트레드밀",
+      label: "트레드밀(경사)",
       type: "treadmill",
       phases: [
         { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 6 } },
@@ -181,6 +191,16 @@ const CARDIO_OPTIONS = {
     },
   ],
   rest: [
+    {
+      key: "running",
+      label: "러닝(걷기↔뛰기)",
+      type: "treadmill",
+      phases: [
+        { key: "warmup", label: "워밍업", seconds: 5 * 60, fields: { incline: 0, speed: 5.5 } },
+        { key: "main", label: "본운동", seconds: 18 * 60, fields: { highIncline: 0, highSpeed: 8, highSeconds: 1 * 60, lowIncline: 0, lowSpeed: 5.5, lowSeconds: 2 * 60, reps: 6 } },
+        { key: "cooldown", label: "쿨다운", seconds: 4 * 60, fields: { incline: 0, speed: 4.5 } },
+      ],
+    },
     {
       key: "walk",
       label: "가벼운 유산소",

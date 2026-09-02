@@ -13,7 +13,7 @@ const DAY_TYPE = { 월: "upper", 화: "lower", 수: "upper", 목: "lower", 금: 
 
 const DAY_INFO = {
   upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
-  lower: { label: "유산소 60분", duration: 60, calories: 480, color: "#3E8FB0" },
+  lower: { label: "코어 + 유산소", duration: 70, calories: 500, color: "#3E8FB0" },
   rest: { label: "완전 휴식", duration: 0, calories: 0, color: "#545C6B" },
 };
 
@@ -84,7 +84,17 @@ const EXERCISES = {
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
     ] },
   ],
-  lower: [],
+  lower: [
+    { id: "hangingraise_cardio", name: "행잉 니 레이즈", unit: "bodyweight", tip: "반동 없이 골반을 말아 무릎을 배 쪽으로 끌어올립니다. 허리가 과하게 흔들리지 않게 복부 힘으로 천천히 수행하세요.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", sets: [
+      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }
+    ] },
+    { id: "cablecrunch_cardio", name: "케이블 크런치", unit: "kg", tip: "엉덩이 위치를 크게 움직이지 않고 갈비뼈를 골반 쪽으로 말아 복부를 수축하세요. 팔로 로프를 당기지 않습니다.", breath: "말아 내릴 때 내쉬고, 펼 때 들이쉬세요", sets: [
+      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
+    ] },
+    { id: "plank_cardio", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 아래에 두고 머리부터 발끝까지 일직선을 유지합니다. 허리가 처지지 않도록 복부와 엉덩이에 힘을 주세요.", breath: "숨을 참지 말고 편안하게 이어가세요", sets: [
+      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
+    ] },
+  ],
   rest: [],
 };
 
@@ -160,6 +170,8 @@ const state = {
   timerHandle: null,
   activeExerciseId: null,
   activeSetIdx: 0,
+  selectedExerciseId: null, // 목록에서 선택한 운동만 상세 표시
+  selectedCardioKey: null, // 유산소 데이에서 선택한 유산소 유형만 상세 표시
   queue: null, // remaining exercise ids to auto-run after current one (block mode)
   sessionStart: null,
   elapsedHandle: null,
@@ -216,6 +228,24 @@ const DEFAULT_UNSELECTED = ["woodchop", "bulgarian", "calfraise"];
   state.configs = migratedConfigs;
   state.selection = { ...state.selection, upper: {} };
   state.order = { ...state.order, upper: EXERCISES.upper.map((e) => e.id) };
+  lsSet("wt_exercise_configs", state.configs);
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet("wt_exercise_order", state.order);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
+// v19: 유산소 데이에 코어 3종목을 추가하고 기본 순서를 초기화합니다.
+(function migrateCardioCore() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 19;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+  const migratedConfigs = { ...state.configs };
+  EXERCISES.lower.forEach((ex) => {
+    if (!migratedConfigs[ex.id]) migratedConfigs[ex.id] = { workSec: ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: ex.sets.map((set) => ({ ...set })) };
+  });
+  state.configs = migratedConfigs;
+  state.selection = { ...state.selection, lower: {} };
+  state.order = { ...state.order, lower: EXERCISES.lower.map((e) => e.id) };
   lsSet("wt_exercise_configs", state.configs);
   lsSet("wt_exercise_selection", state.selection);
   lsSet("wt_exercise_order", state.order);
@@ -645,6 +675,7 @@ function loadDayState() {
   state.sessionStart = null;
   state.activeExerciseId = null;
   state.activeSetIdx = 0;
+  state.selectedExerciseId = null;
   state.queue = null;
   clearInterval(state.timerHandle);
   state.timer = null;
@@ -899,6 +930,30 @@ function exerciseCardHTML(ex, index) {
     </div>`;
 }
 
+function exerciseOverviewHTML(exercises) {
+  return `<div class="card" style="overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1px solid #262B34;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:15px;font-weight:700">오늘 운동 목록</div>
+      <div style="font-size:12px;color:#8A93A3">운동을 누르면 상세 화면</div>
+    </div>
+    ${exercises.map((ex, i) => {
+      const disp = getExDisplay(ex);
+      const cfg = getConfig(ex);
+      const effSets = getEffectiveSets(ex, cfg);
+      const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length;
+      const done = doneCount === effSets.length;
+      return `<button data-openexercise="${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:${i === exercises.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer">
+        <div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:700">${disp.name}</div>
+          <div style="font-size:12px;color:#8A93A3;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${buildSummary(ex)}${doneCount && !done ? ` · ${doneCount}/${effSets.length} 완료` : ''}</div>
+        </div>
+        <span style="color:#8A93A3;font-size:18px">›</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
 function dayHTML() {
   const dayType = getDayType(state.selectedDate);
   const allExercises = getOrderedExercises(dayType);
@@ -909,10 +964,12 @@ function dayHTML() {
   const dateObj = parseLocalDate(state.selectedDate);
   const dateLabel = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${getDayLabel(state.selectedDate)})`;
   const blockRunning = !!state.activeExerciseId;
+  const selectedExercise = state.selectedExerciseId ? exercises.find((ex) => ex.id === state.selectedExerciseId) : null;
+  const coreDoneSets = dayType === "lower" ? exercises.reduce((n, ex) => n + getEffectiveSets(ex, getConfig(ex)).filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length, 0) : doneSets;
   const progressHTML = dayType === "upper"
     ? `<div style="margin-top:14px;height:6px;background:#262B34;border-radius:3px;overflow:hidden"><div style="width:${totalSets ? (doneSets / totalSets) * 100 : 0}%;height:100%;background:#4CAF7D;transition:width .3s"></div></div><div style="font-size:12px;color:#8A93A3;margin-top:6px">${doneSets} / ${totalSets} 세트 완료</div>`
     : dayType === "lower"
-      ? `<div style="margin-top:14px;font-size:12px;color:${state.completed.cardio ? "#4CAF7D" : "#8A93A3"}">${state.completed.cardio ? "✓ 오늘 유산소 60분 완료" : "유산소 60분을 완료하면 달력에 기록됩니다."}</div>`
+      ? `<div style="margin-top:14px;font-size:12px;color:#8A93A3">코어 ${coreDoneSets}/${totalSets} 세트 · 유산소 ${state.completed.cardio ? '<span style="color:#4CAF7D">✓ 완료</span>' : '미완료'}</div>`
       : `<div style="margin-top:14px;font-size:12px;color:#8A93A3">회복일 · 운동 기록 없음</div>`;
 
   const selectionHTML = dayType === "upper" ? `
@@ -959,7 +1016,7 @@ function dayHTML() {
   const isCardioEditOpen = !!state.cardioEditOpen[cardioEditKey];
   const cardioFieldStyle = "width:64px;background:#14161A;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:5px 4px;font-family:ui-monospace,monospace;font-size:13px;text-align:center;display:block;margin-top:3px";
   const cardioTabsHTML =
-    cardioOptions.length > 1
+    cardioOptions.length > 1 && !(dayType === "lower" && state.selectedCardioKey)
       ? `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
           ${cardioOptions
             .map(
@@ -987,6 +1044,18 @@ function dayHTML() {
     }
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${inputs}</div>`;
   };
+
+  const cardioDayOverviewHTML = dayType === "lower" ? `<div class="card" style="overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1px solid #262B34;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:15px;font-weight:700">오늘 운동 목록</div>
+      <div style="font-size:12px;color:#8A93A3">6개 중 선택</div>
+    </div>
+    ${exercises.map((ex, i) => {
+      const cfg = getConfig(ex); const effSets = getEffectiveSets(ex, cfg); const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length; const done = doneCount === effSets.length;
+      return `<button data-openexercise="${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${ex.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
+    }).join('')}
+    ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${opt.label}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">컨디션에 따라 선택 · 탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
+  </div>` : "";
 
   const cardioHTML = activeCardioOption ? `
     <div class="card" style="padding:14px;margin-top:4px">
@@ -1052,14 +1121,20 @@ function dayHTML() {
       <div style="padding:0 16px;margin-bottom:10px">
         ${selectionHTML}
       </div>
-      <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
-        ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:8px">▶ ${info.label} 오늘 운동 전체 자동 진행 (${exercises.length}종목)</button>` : ""}
-        ${dayType === "upper" ? '<div style="font-size:12px;color:#8A93A3;text-align:center;margin-top:-2px">세트별 작업과 휴식시간을 자동으로 이어서 진행합니다. 아래에서 운동 하나씩 시작할 수도 있어요.</div>' : ''}
-      </div>
-      <div style="height:4px"></div>
+      ${dayType === "upper" && !selectedExercise ? `
+        <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
+          ${exerciseOverviewHTML(exercises)}
+          ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"}">▶ 오늘 운동 전체 자동 진행</button>` : ""}
+        </div>` : ''}
+      ${(dayType === "upper" || dayType === "lower") && selectedExercise ? `
+        <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
+          <button id="backToExerciseList" style="background:#1E222A;border:1px solid #333944;border-radius:9px;padding:10px 12px;color:#ECEEF2;font-size:14px;text-align:left;cursor:pointer">‹ 오늘 운동 목록으로</button>
+          ${exerciseCardHTML(selectedExercise, exercises.indexOf(selectedExercise))}
+        </div>` : ''}
+      ${dayType === "lower" && !selectedExercise && !state.selectedCardioKey ? `<div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">${cardioDayOverviewHTML}</div>` : ''}
+      ${dayType === "lower" && state.selectedCardioKey ? `<div style="padding:0 16px;display:flex;flex-direction:column;gap:10px"><button id="backToExerciseList" style="background:#1E222A;border:1px solid #333944;border-radius:9px;padding:10px 12px;color:#ECEEF2;font-size:14px;text-align:left;cursor:pointer">‹ 오늘 운동 목록으로</button>${cardioHTML}</div>` : ''}
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
-        ${exercises.map((ex, i) => exerciseCardHTML(ex, i)).join("")}
-        ${cardioHTML}
+        ${dayType === "rest" ? cardioHTML : ''}
         <button id="resetDay" style="margin-top:6px;margin-bottom:20px;background:transparent;border:1px solid #333944;color:#8A93A3;border-radius:8px;padding:10px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">↺ 이 날짜 기록 초기화</button>
       </div>
       ${state.timer ? timerBarHTML() : ""}
@@ -1335,6 +1410,8 @@ function resetExercise(ex) {
   if (state.activeExerciseId === ex.id) {
     state.activeExerciseId = null;
     state.queue = null;
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
     clearInterval(state.timerHandle);
     state.timer = null;
     state.paused = false;
@@ -1425,7 +1502,11 @@ function attachHandlers() {
 
   // day view
   document.getElementById("backToCal").onclick = () => {
-    history.back();
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
+    state.view = "calendar";
+    history.pushState({ view: "calendar" }, "", "");
+    render();
   };
 
   document.getElementById("toggleVoice").onclick = toggleVoice;
@@ -1437,10 +1518,41 @@ function attachHandlers() {
     state.sessionStart = null;
     state.activeExerciseId = null;
     state.queue = null;
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
     clearInterval(state.elapsedHandle);
     clearInterval(state.timerHandle);
     state.timer = null;
     render();
+  };
+
+  document.querySelectorAll("[data-openexercise]").forEach((el) => {
+    el.onclick = () => {
+      state.selectedCardioKey = null;
+      state.selectedExerciseId = el.getAttribute("data-openexercise");
+      state.expanded[state.selectedExerciseId] = true;
+      render();
+      window.scrollTo(0, 0);
+    };
+  });
+
+  document.querySelectorAll("[data-opencardio]").forEach((el) => {
+    el.onclick = () => {
+      const key = el.getAttribute("data-opencardio");
+      const dayType = getDayType(state.selectedDate);
+      state.selectedExerciseId = null;
+      state.selectedCardioKey = key;
+      setCardioChoiceFor(dayType, key);
+      window.scrollTo(0, 0);
+    };
+  });
+
+  const backToExerciseList = document.getElementById("backToExerciseList");
+  if (backToExerciseList) backToExerciseList.onclick = () => {
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
+    render();
+    window.scrollTo(0, 0);
   };
 
   document.querySelectorAll("[data-toggleexpand]").forEach((el) => {
@@ -1565,6 +1677,7 @@ function attachHandlers() {
     el.onclick = () => {
       const key = el.getAttribute("data-cardiotab");
       const dayType = getDayType(state.selectedDate);
+      state.selectedCardioKey = key;
       setCardioChoiceFor(dayType, key);
     };
   });
@@ -1610,5 +1723,6 @@ window.addEventListener("popstate", (e) => {
 
 // ---------- Init ----------
 loadDayState();
-history.replaceState({ view: "calendar" }, "", "");
+state.view = "day";
+history.replaceState({ view: "day", date: state.selectedDate }, "", "");
 render();

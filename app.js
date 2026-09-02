@@ -1264,7 +1264,15 @@ function handleSetTimerFinish(t) {
 
   if (t.kind === "setWork") {
     markSetComplete(t.exId, t.setIdx);
-    if (t.restSec > 0) {
+    // 마지막 세트가 끝난 단독 운동은 불필요한 휴식 없이 오늘 운동 목록으로 즉시 복귀한다.
+    if (t.nextSetIdx == null && (!state.queue || state.queue.length === 0)) {
+      speak("이 운동을 완료했습니다.");
+      state.activeExerciseId = null;
+      state.queue = null;
+      state.timer = null;
+      state.selectedExerciseId = null;
+      state.selectedCardioKey = null;
+    } else if (t.restSec > 0) {
       announceRest(t.restSec);
       state.timer = { kind: "setRest", exId: t.exId, setIdx: t.setIdx, nextSetIdx: t.nextSetIdx, isLastSet: t.nextSetIdx === null, remaining: t.restSec, total: t.restSec };
     } else if (t.nextSetIdx != null) {
@@ -1306,6 +1314,8 @@ function finishActiveTimer() {
       saveProgress();
       updateSummary(state.selectedDate, true);
       state.timer = null;
+      state.selectedExerciseId = null;
+      state.selectedCardioKey = null;
       speak("오늘 유산소 60분을 완료했습니다. 수고하셨습니다.");
     }
   } else {

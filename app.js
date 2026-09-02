@@ -511,48 +511,107 @@ function removeSet(ex, setIdx) {
 }
 
 // ---------- Voice guidance ----------
+// Android/Chrome의 Web Speech API는 긴 문장을 한 번에 읽거나 여러 utterance를
+// 한꺼번에 큐에 넣으면 중간에 멈추는 경우가 있다. 짧은 조각을 하나씩 onend로
+// 이어 읽고, 현재 utterance 참조를 유지해 GC로 음성이 끊기는 현상을 줄인다.
+let voiceRunId = 0;
+let activeUtterance = null;
+let voiceChunks = [];
+
+function splitSpeechText(text) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  // 문장부호 기준으로 먼저 나누고, 너무 긴 문장은 쉼표 기준으로 한 번 더 나눈다.
+  const sentences = normalized.match(/[^.!?]+[.!?]?/g) || [normalized];
+  const chunks = [];
+  sentences.forEach((raw) => {
+    const sentence = raw.trim();
+    if (!sentence) return;
+    if (sentence.length <= 70) {
+      chunks.push(sentence);
+      return;
+    }
+    const parts = sentence.replace(/([,，])/g, "$1|").split("|").map((x) => x.trim()).filter(Boolean);
+    let buf = "";
+    parts.forEach((part) => {
+      if (buf && (buf + " " + part).length > 70) {
+        chunks.push(buf.trim());
+        buf = part;
+      } else {
+        buf = buf ? `${buf} ${part}` : part;
+      }
+    });
+    if (buf.trim()) chunks.push(buf.trim());
+  });
+  return chunks;
+}
+
+function stopSpeech() {
+  voiceRunId += 1;
+  voiceChunks = [];
+  activeUtterance = null;
+  try {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  } catch (e) {}
+}
+
+function speakNextChunk(runId, koVoice) {
+  if (runId !== voiceRunId || !state.voiceEnabled || !window.speechSynthesis) return;
+  const chunk = voiceChunks.shift();
+  if (!chunk) {
+    activeUtterance = null;
+    return;
+  }
+
+  const u = new SpeechSynthesisUtterance(chunk);
+  activeUtterance = u;
+  u.lang = "ko-KR";
+  u.rate = 0.96;
+  u.pitch = 1.0;
+  if (koVoice) u.voice = koVoice;
+
+  u.onend = () => {
+    if (runId !== voiceRunId) return;
+    activeUtterance = null;
+    // Android에서 다음 utterance를 즉시 넣을 때 누락되는 경우가 있어 아주 짧게 띄운다.
+    setTimeout(() => speakNextChunk(runId, koVoice), 80);
+  };
+  u.onerror = (event) => {
+    if (runId !== voiceRunId) return;
+    activeUtterance = null;
+    // cancel/interrupted는 새 안내가 시작된 정상 상황일 수 있다.
+    if (event && (event.error === "canceled" || event.error === "interrupted")) return;
+    setTimeout(() => speakNextChunk(runId, koVoice), 120);
+  };
+
+  try { window.speechSynthesis.speak(u); } catch (e) {
+    activeUtterance = null;
+    setTimeout(() => speakNextChunk(runId, koVoice), 120);
+  }
+}
+
 function speak(text) {
   if (!state.voiceEnabled) return;
   try {
     if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const sentences = text
-      .split(/(?<=[.!?])\s+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    setTimeout(() => {
-      try {
-        const voices = window.speechSynthesis.getVoices();
-        const koVoice = voices.find((v) => v.lang === "ko-KR") || voices.find((v) => v.lang && v.lang.startsWith("ko"));
-        sentences.forEach((sentence) => {
-          const u = new SpeechSynthesisUtterance(sentence);
-          u.lang = "ko-KR";
-          u.rate = 1.0;
-          if (koVoice) u.voice = koVoice;
-          window.speechSynthesis.speak(u);
-        });
-      } catch (e) {}
-    }, 60);
+    stopSpeech();
+    const chunks = splitSpeechText(text);
+    if (!chunks.length) return;
+    const runId = voiceRunId;
+    voiceChunks = chunks;
+
+    // 일부 Android 기기는 voices가 늦게 로드되므로, 없어도 ko-KR lang으로 바로 재생한다.
+    const voices = window.speechSynthesis.getVoices() || [];
+    const koVoice = voices.find((v) => v.lang === "ko-KR") || voices.find((v) => v.lang && v.lang.startsWith("ko"));
+    setTimeout(() => speakNextChunk(runId, koVoice), 80);
   } catch (e) {}
 }
-
-// Chrome/Android는 speechSynthesis가 일정 시간 후 멈춰버리는 버그가 있어
-// 주기적으로 pause/resume을 걸어서 음성 안내가 끊기지 않게 함
-setInterval(() => {
-  try {
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
-    }
-  } catch (e) {}
-}, 12000);
 
 function toggleVoice() {
   state.voiceEnabled = !state.voiceEnabled;
   lsSet("wt_voice_enabled", state.voiceEnabled);
-  if (!state.voiceEnabled && window.speechSynthesis) {
-    try { window.speechSynthesis.cancel(); } catch (e) {}
-  }
+  if (!state.voiceEnabled) stopSpeech();
   render();
 }
 

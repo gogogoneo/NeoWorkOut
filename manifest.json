@@ -1,7 +1,7 @@
 {
-  "name": "웨이트 트래커",
-  "short_name": "웨이트트래커",
-  "description": "요일별 웨이트+유산소 루틴 트래커",
+  "name": "운동 트래커",
+  "short_name": "운동트래커",
+  "description": "월수금 전신 웨이트 · 화목토 60분 유산소 루틴 트래커",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#14161A",

@@ -7,209 +7,103 @@ if ("serviceWorker" in navigator) {
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
+// 새 루틴: 월·수·금 전신 웨이트 / 화·목·토 유산소 / 일 완전 휴식
+// 기존 내부 키(upper/lower/rest)는 저장 데이터 호환성을 위해 유지합니다.
 const DAY_TYPE = { 월: "upper", 화: "lower", 수: "upper", 목: "lower", 금: "upper", 토: "lower", 일: "rest" };
 
 const DAY_INFO = {
-  upper: { label: "상체", duration: 87, calories: 755, color: "#F5C518" },
-  lower: { label: "하체/등", duration: 79, calories: 690, color: "#3E8FB0" },
-  rest: { label: "코어 · 가벼운 유산소", duration: 40, calories: 240, color: "#545C6B" },
+  upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
+  lower: { label: "유산소 60분", duration: 60, calories: 480, color: "#3E8FB0" },
+  rest: { label: "완전 휴식", duration: 0, calories: 0, color: "#545C6B" },
 };
 
 const EXERCISES = {
   upper: [
-    { id: "bench", name: "바벨 벤치프레스", unit: "kg", tip: "어깨뼈를 뒤로 모으고 살짝 젖힌 상태로 허리를 들고, 바를 명치 위쪽에 터치하듯 내렸다가 밀어올림. 팔꿈치는 몸통에서 45도 정도, 손목은 일직선. 겨드랑이로 미는 느낌으로 천천히 일정한 속도로!", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "푸시업", tip: "손은 어깨보다 약간 넓게, 몸을 일직선으로 유지하며 가슴이 바닥에 닿기 직전까지 내렸다가 밀어올리세요. 힘들면 무릎을 대고 하세요.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 60 }, { value: null, reps: 15, rest: 60 }, { value: null, reps: 12, rest: 60 }] }], sets: [
-      { value: 40, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 60, reps: 12, rest: 90 }, { value: 65, reps: 5, rest: 90 } ] },
-    { id: "incline", name: "인클라인 덤벨프레스", unit: "kg", tip: "벤치 각도는 30도. 쇄골뼈 위쪽에 위치, 덤벨을 가슴 위쪽으로 내렸다가 밀어올리고 덤벨 간격 유지!", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "인클라인 푸시업", tip: "손을 벤치나 낮은 박스에 올리고 몸은 비스듬하게, 가슴 아래쪽을 가깝게 내렸다가 밀어올리세요.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 60 }, { value: null, reps: 15, rest: 60 }, { value: null, reps: 12, rest: 60 }] }], sets: [
-      { value: 10, reps: 12, rest: 90 }, { value: 10, reps: 12, rest: 90 }, { value: 12, reps: 12, rest: 90 }, { value: 12, reps: 12, rest: 90 } ] },
-    { id: "dips", name: "어시스트 머신 딥스", unit: "kg", tip: "가슴 하부·삼두·전면 어깨를 함께 자극하는 복합관절 운동이에요. 어시스트 머신은 숫자가 클수록 쉽고 작을수록 힘드니 주의! 상체를 살짝 앞으로 숙이고 팔꿈치를 벌리며 내려갔다가 밀어올리세요. 몇 회에서 힘든지로 감을 잡고 며칠에 걸쳐 어시스트 무게를 조정하세요.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "벤치 딥스", tip: "의자나 벤치 두 개에 손과 발을 걸치고, 팔꿈치를 굽혀 엉덩이를 내렸다가 밀어올리세요. 어깨가 안 좋으면 무릎을 굽혀 강도를 낮추세요.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 60 }, { value: null, reps: 12, rest: 60 }, { value: null, reps: 10, rest: 60 }] }], sets: [
-      { value: 40, reps: 12, rest: 90 }, { value: 35, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 } ] },
-    { id: "flye", name: "덤벨 플라이", unit: "kg", tip: "팔꿈치를 살짝 굽힌 채 고정하고, 양팔을 아치 모양으로 벌렸다가 가슴 앞에서 모으세요. 팔이 아니라 가슴으로 짜낸다는 느낌으로, 무게보다 가동범위와 스트레칭 느낌이 우선!", breath: "벌릴 때 숨을 들이쉬고, 모을 때 내쉬세요", substitutes: [{ name: "와이드 푸시업", tip: "손 간격을 어깨너비보다 훨씬 넓게 잡고 푸시업을 하면 가슴 바깥쪽에 플라이와 비슷한 스트레칭 자극이 들어가요.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 12, rest: 45 }] }], sets: [
-      { value: 8, reps: 12, rest: 45 }, { value: 10, reps: 12, rest: 45 }, { value: 10, reps: 10, rest: 45 } ] },
-    { id: "hangingraise1", name: "행잉 니레이즈", unit: "bodyweight", tip: "철봉에 매달려 반동 없이 무릎(또는 다리)을 배 쪽으로 끌어올리세요. 그립력이 먼저 지치니 코어 운동 중 가장 먼저 배치! 흔들림 없이 천천히 컨트롤하는 게 핵심!", breath: "다리를 끌어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "라잉 레그레이즈", tip: "바닥에 누워 다리를 곧게 펴고 천천히 들어올렸다 내리세요. 허리가 뜨지 않게 아랫배에 힘을 주세요. 철봉이 없어도 가능합니다.", breath: "다리를 들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
-    { id: "cablecrunch1", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
-      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-    { id: "woodchop1", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-      ] },
-    { id: "sideplank1", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-      ] },
-    { id: "plank1", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
-    { id: "ohp", name: "덤벨 오버헤드프레스", unit: "kg", tip: "코어에 힘을 주고 허리가 젖혀지지 않게 유지. 덤벨을 귀 옆에서 시작해 머리 위로. 팔을 완전히 펼 때 덤벨이 살짝 안쪽으로 모이는 궤적으로!", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "파이크 푸시업", tip: "엉덩이를 높이 들어 몸을 역V자로 만들고, 머리가 바닥에 닿을 듯 내렸다가 밀어올리세요. 어깨에 프레스 자극이 들어갑니다.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 10, rest: 45 }] }], sets: [
-      { value: 8, reps: 12, rest: 45 }, { value: 8, reps: 12, rest: 45 }, { value: 8, reps: 12, rest: 45 } ] },
-    { id: "lateral", name: "레터럴레이즈", unit: "kg", tip: "팔꿈치를 아주 살짝 굽힌 채로 어깨 관절을 축으로 옆으로 들어올림. 어깨 높이보다 높이 들지 말고, 손이 아니라 팔꿈치가 먼저 올라간다는 느낌으로! 손목을 꺾어 무게를 버티지 말고 팔꿈치로 리드하세요.", breath: "들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "밴드 레터럴레이즈", tip: "저항밴드를 발로 밟거나 고정하고, 덤벨 대신 밴드 저항으로 옆으로 들어올리세요. 동작은 동일합니다.", breath: "들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 } ] },
-    { id: "reardelt", name: "리어델트플라이", unit: "kg", tip: "상체를 앞으로 90도 숙이고 엄지가 안쪽으로 가도록 들고, 팔을 옆으로 벌리며 견갑골을 조인다는 느낌으로 반동 없이 천천히! 허리로 반동 주면 자극이 등으로 새니 몸통 고정에 신경 쓰세요.", breath: "벌릴 때 숨을 내쉬고, 모을 때 들이쉬세요", substitutes: [{ name: "맨몸 리어델트레이즈", tip: "상체를 숙이고 덤벨 없이 팔만 옆으로 들어올리며 견갑골을 조이세요. 가볍다면 물병 등으로 대체 가능합니다.", breath: "벌릴 때 숨을 내쉬고, 모을 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 } ] },
-    { id: "bicep", name: "덤벨 이두컬", unit: "kg", tip: "팔꿈치를 몸통에 고정하고 팔뚝만. 몸을 뒤로 젖히며 반동 주는 걸 피하고, 내릴 때도 천천히 저항을 느끼면서. 두팔 5·각팔 5·두팔 5 루틴으로!", breath: "들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "밴드 이두컬", tip: "밴드를 발로 밟고 손잡이를 잡아 이두컬과 동일한 동작으로 당기세요.", breath: "들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 15, rest: 45 } ] },
-    { id: "tricep", name: "덤벨 삼두", unit: "kg", tip: "팔꿈치가 벌어지지 않게 고정하고 팔뚝만 굽혔다 폄. 원이 아닌 상하 직선 운동으로! 팔꿈치가 몸통보다 앞으로 빠지면 자극이 어깨로 새니 팔꿈치 위치를 계속 확인하세요.", breath: "펼 때 숨을 내쉬고, 굽힐 때 들이쉬세요", substitutes: [{ name: "다이아몬드 푸시업", tip: "손을 모아 다이아몬드 모양을 만들고 푸시업을 하면 삼두에 강한 자극이 들어갑니다.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 10, rest: 45 }] }], sets: [
-      { value: 14, reps: 12, rest: 45 }, { value: 14, reps: 12, rest: 45 }, { value: 14, reps: 12, rest: 45 } ] },
-    { id: "forearm", name: "전완근 (리스트컬 ↔ 리버스 바벨바)", unit: "kg", tip: "팔뚝을 무릎이나 벤치에 고정하고 손목만. 가동범위를 크게 가져가기보다 천천히 쥐어짜는 느낌이 효과적! 무게보다 쥐는 힘과 텐션 유지가 핵심이니 가볍게 시작해도 괜찮아요.", breath: "쥐어짤 때 숨을 내쉬고, 풀 때 들이쉬세요", substitutes: [{ name: "맨몸 손목 컬", tip: "무게 없이 손목을 굽혔다 펴는 동작을 천천히, 꽉 쥐는 느낌으로 반복하세요. 수건을 비틀어 짜는 동작도 좋은 대체입니다.", breath: "쥐어짤 때 숨을 내쉬고, 풀 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }] }], sets: [
-      { value: 8, reps: 20, rest: 45 }, { value: 10, reps: 12, rest: 45 }, { value: 8, reps: 20, rest: 45 },
-      { value: 10, reps: 12, rest: 45 }, { value: 8, reps: 20, rest: 45 }, { value: 10, reps: 12, rest: 45 } ] },
-  ],
+    // 가슴: 우선순위 높음, 각 3세트
+    { id: "bench", name: "바벨 벤치프레스", unit: "kg", tip: "견갑을 뒤로 모아 고정하고 가슴을 살짝 들어 바를 가슴 쪽으로 천천히 내렸다가 밀어올리세요. 팔꿈치는 몸통에서 약 45도, 손목은 바 아래에 둡니다.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "푸시업", unit: "bodyweight", tip: "몸을 일직선으로 유지하고 가슴이 바닥에 가까워질 때까지 내려갔다 밀어올리세요.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", sets: [{ value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}] }], sets: [
+      { value: 50, reps: 12, rest: 90 }, { value: 60, reps: 10, rest: 90 }, { value: 65, reps: 6, rest: 120 }
+    ] },
+    { id: "dips", name: "어시스트 머신 딥스", unit: "kg", tip: "가슴 자극을 위해 상체를 약간 앞으로 기울이고, 어깨가 과하게 내려가지 않는 범위에서 내려갔다 밀어올리세요. 어시스트 숫자가 클수록 쉬워집니다.", breath: "밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{ name:"벤치 딥스",unit:"bodyweight",tip:"어깨가 불편하지 않은 범위에서 천천히 수행하세요.",breath:"밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+      { value: 40, reps: 12, rest: 90 }, { value: 35, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }
+    ] },
+    { id: "flye", name: "인클라인 덤벨 플라이", unit: "kg", tip: "벤치를 약 20~30도로 세우고 팔꿈치를 살짝 굽힌 상태로 고정합니다. 가슴 상부가 늘어나는 범위까지만 벌렸다가 가슴으로 모으세요. 무게보다 가동범위와 수축이 우선입니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"인클라인 와이드 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 넓게 잡아 가슴의 늘어남을 느끼며 수행하세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+      { value: 8, reps: 12, rest: 60 }, { value: 10, reps: 12, rest: 60 }, { value: 10, reps: 10, rest: 60 }
+    ] },
 
-  lower: [
-    { id: "legpress", name: "레그프레스", unit: "kg", tip: "발은 어깨너비로 발판 중앙에, 무릎이 발끝 방향과 같은 각도로 굽히고, 무릎을 완전히 펼 때 락아웃하지 않고 살짝 여유를 남기는 게 관절에 안전!", breath: "밀어낼 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "맨몸 스쿼트", tip: "발은 어깨너비, 무릎이 발끝 방향과 같게 앉았다 일어서세요. 속도를 늦추거나 반복수를 늘려 강도를 보완하세요.", breath: "일어설 때 숨을 내쉬고, 앉을 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 60 }, { value: null, reps: 20, rest: 60 }, { value: null, reps: 15, rest: 60 }] }], sets: [
-      { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 } ] },
-    { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝만 굽히고, 허리를 곧게 편 채로 엉덩이를 뒤로 빼면서 덤벨을 정강이를 스치듯 수직으로 내려가세요. 햄스트링이 당기면 멈추고 엉덩이 힘으로 일어서세요. 등이 말리면 무게를 낮추세요!", breath: "일어설 때 숨을 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{ name: "싱글레그 데드리프트 (맨몸)", tip: "한 다리로 서서 상체를 앞으로 숙이며 반대 다리를 뒤로 뻗으세요. 균형을 잡으며 천천히, 허리는 곧게.", breath: "일어설 때 숨을 내쉬고, 내려갈 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 12, rest: 60 }, { value: null, reps: 12, rest: 60 }, { value: null, reps: 10, rest: 60 }, { value: null, reps: 10, rest: 60 }] }], sets: [
-      { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }, { value: 18, reps: 10, rest: 90 } ] },
-    { id: "latpull", name: "랫풀다운", unit: "kg", tip: "바를 어깨너비보다 살짝 넓게 잡고, 가슴을 살짝 내밀고 쇄골 방향으로 당기세요. 몸을 뒤로 젖히며 반동 쓰지 말고, 팔이 아니라 등(광배근)으로 당긴다는 느낌!", breath: "당길 때 숨을 내쉬고, 풀 때 들이쉬세요", substitutes: [{ name: "슈퍼맨", tip: "엎드려서 팔다리를 동시에 들어올려 등 전체를 수축하세요. 밴드가 있으면 문에 걸고 랫풀다운 동작으로 당겨도 좋습니다.", breath: "들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 60 }, { value: null, reps: 15, rest: 60 }, { value: null, reps: 12, rest: 60 }] }], sets: [
-      { value: 35, reps: 12, rest: 90 }, { value: 40, reps: 10, rest: 90 }, { value: 45, reps: 8, rest: 90 } ] },
-    { id: "cablerow", name: "케이블 로우", unit: "kg", tip: "허리를 곧게 세우고 앉아서, 손잡이를 배꼽 방향으로 당기며 견갑골을 조이세요. 상체가 뒤로 크게 젖혀지지 않도록 고정하고 광배와 등에 부하를 느끼며!", breath: "당길 때 숨을 내쉬고, 풀 때 들이쉬세요", substitutes: [{ name: "밴드 로우", tip: "밴드를 발로 밟거나 고정하고 손잡이를 배꼽 방향으로 당기며 견갑골을 조이세요.", breath: "당길 때 숨을 내쉬고, 풀 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 60 }, { value: null, reps: 15, rest: 60 }, { value: null, reps: 12, rest: 60 }] }], sets: [
-      { value: 30, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }, { value: 40, reps: 8, rest: 90 } ] },
-    { id: "bulgarian", name: "불가리안스쿼트 (다리당)", unit: "bodyweight", tip: "뒷발을 벤치에 걸치고 앞다리 위주로 체중을 실으세요. 앞무릎이 발끝을 심하게 넘어가지 않게, 상체는 살짝 앞으로 기울여 균형! 처음엔 맨몸으로 좌우 균형과 무릎 방향부터 익히세요.", breath: "일어설 때 숨을 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{ name: "제자리 런지", tip: "벤치가 없어도 되는 버전. 한 다리씩 앞으로 내딛어 무릎이 90도가 되게 앉았다 일어서세요.", breath: "일어설 때 숨을 내쉬고, 내려갈 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }] }], sets: [
-      { value: null, reps: 10, rest: 45 }, { value: null, reps: 10, rest: 45 }, { value: null, reps: 10, rest: 45 } ] },
-    { id: "calfraise", name: "카프레이즈", unit: "kg", tip: "1/3정도 걸치고 발볼로 지지한 채 뒤꿈치를 최대한 높이 들어올렸다가, 내릴 때는 뒤꿈치가 바닥보다 살짝 아래까지 늘어나게 천천히. 반동 없이! 꼭대기에서 1초 정지하면 자극이 훨씬 잘 들어와요.", breath: "올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "맨몸 카프레이즈(고반복)", tip: "기구 없이 계단이나 평지에서 뒤꿈치를 들었다 내리세요. 무게가 없는 만큼 반복수를 늘려 자극을 보완하세요.", breath: "올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 25, rest: 30 }, { value: null, reps: 25, rest: 30 }, { value: null, reps: 25, rest: 30 }] }], sets: [
-      { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 } ] },
-    { id: "hangingraise2", name: "행잉 니레이즈", unit: "bodyweight", tip: "철봉에 매달려 반동 없이 무릎(또는 다리)을 배 쪽으로 끌어올리세요. 그립력이 먼저 지치니 코어 운동 중 가장 먼저 배치! 흔들림 없이 천천히 컨트롤하는 게 핵심!", breath: "다리를 끌어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "라잉 레그레이즈", tip: "바닥에 누워 다리를 곧게 펴고 천천히 들어올렸다 내리세요. 허리가 뜨지 않게 아랫배에 힘을 주세요. 철봉이 없어도 가능합니다.", breath: "다리를 들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
-    { id: "cablecrunch2", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
-      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-        { id: "woodchop2", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-      ] },
-{ id: "sideplank2", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-      ] },
-    { id: "plank2", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
+    // 등: 수평 당기기 + 수직 당기기, 각 3세트
+    { id: "cablerow", name: "시티드 케이블 로우", unit: "kg", tip: "허리를 세우고 손잡이를 배꼽 방향으로 당기며 견갑을 뒤로 모으세요. 상체 반동을 최소화합니다.", breath: "당길 때 내쉬고, 돌아갈 때 들이쉬세요", substitutes: [{name:"밴드 로우",unit:"bodyweight",tip:"밴드를 고정하고 팔꿈치를 뒤로 보내며 견갑을 모으세요.",breath:"당길 때 내쉬고, 풀 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+      { value: 30, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }, { value: 40, reps: 8, rest: 90 }
+    ] },
+    { id: "latpull", name: "랫풀다운", unit: "kg", tip: "가슴을 살짝 들고 바를 쇄골 쪽으로 당기세요. 몸을 뒤로 크게 젖히지 말고 팔보다 광배근으로 당긴다는 느낌을 유지합니다.", breath: "당길 때 내쉬고, 올릴 때 들이쉬세요", substitutes: [{name:"밴드 랫풀다운",unit:"bodyweight",tip:"밴드를 머리 위에 고정하고 팔꿈치를 옆구리 쪽으로 끌어내리세요.",breath:"당길 때 내쉬고, 올릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+      { value: 35, reps: 12, rest: 90 }, { value: 40, reps: 10, rest: 90 }, { value: 45, reps: 8, rest: 90 }
+    ] },
+
+    // 하체: 각 3세트
+    { id: "legpress", name: "레그프레스", unit: "kg", tip: "발을 발판 중앙에 어깨너비 정도로 두고 무릎과 발끝 방향을 맞춥니다. 무릎을 완전히 잠그지 않고 허리가 뜨지 않는 깊이까지만 내려갑니다.", breath: "밀어낼 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"맨몸 스쿼트",unit:"bodyweight",tip:"무릎과 발끝 방향을 맞추고 엉덩이를 뒤로 보내며 앉았다 일어서세요.",breath:"일어설 때 내쉬고, 앉을 때 들이쉬세요",sets:[{value:null,reps:20,rest:60},{value:null,reps:20,rest:60},{value:null,reps:15,rest:60}]}], sets: [
+      { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }
+    ] },
+    { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝 굽히고 엉덩이를 뒤로 보내며 덤벨을 정강이 가까이 내립니다. 햄스트링이 충분히 늘어나면 엉덩이 힘으로 일어섭니다. 등이 말리지 않게 합니다.", breath: "일어설 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+      { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }
+    ] },
+
+    // 어깨·이두: 복합운동에서 보조 자극을 받으므로 직접 운동은 각 2세트
+    { id: "ohp", name: "덤벨 오버헤드프레스", unit: "kg", tip: "코어에 힘을 주고 허리가 과하게 젖혀지지 않도록 합니다. 덤벨을 귀 옆에서 머리 위로 밀어올립니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"파이크 푸시업",unit:"bodyweight",tip:"엉덩이를 높인 역V 자세에서 머리를 바닥 쪽으로 내렸다 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+      { value: 8, reps: 12, rest: 60 }, { value: 8, reps: 10, rest: 60 }
+    ] },
+    { id: "lateral", name: "레터럴 레이즈", unit: "kg", tip: "팔꿈치를 살짝 굽히고 팔꿈치가 먼저 올라간다는 느낌으로 어깨 높이 정도까지 들어올립니다. 반동을 최소화합니다.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 레터럴 레이즈",unit:"bodyweight",tip:"밴드를 밟고 같은 궤적으로 천천히 들어올리세요.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
+      { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
+    ] },
+    { id: "reardelt", name: "리어 델트 플라이", unit: "kg", tip: "상체를 숙이고 몸통을 고정한 뒤 팔을 옆으로 벌립니다. 반동보다 후면 어깨 수축에 집중합니다.", breath: "벌릴 때 내쉬고, 모을 때 들이쉬세요", substitutes: [{name:"맨몸 리어델트 레이즈",unit:"bodyweight",tip:"상체를 숙인 뒤 무게 없이 팔을 벌리며 후면 어깨를 수축하세요.",breath:"벌릴 때 내쉬고, 모을 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
+      { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 }
+    ] },
+    { id: "bicep", name: "덤벨 이두 컬", unit: "kg", tip: "팔꿈치를 몸통 옆에 고정하고 반동 없이 들어올립니다. 내려갈 때도 천천히 저항을 유지하세요.", breath: "들어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 이두 컬",unit:"bodyweight",tip:"팔꿈치를 고정하고 밴드를 천천히 당겼다 돌아갑니다.",breath:"당길 때 내쉬고, 돌아갈 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:12,rest:45}]}], sets: [
+      { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 12, rest: 45 }
+    ] },
+
+    // 코어: 기존 선호 운동 유지. 우드초퍼는 선택 운동으로 기본 해제.
+    { id: "hangingraise", name: "행잉 니 레이즈", unit: "bodyweight", tip: "반동 없이 골반을 말아 무릎을 배 쪽으로 끌어올립니다. 그립이 먼저 지치면 코어 운동 중 앞쪽에 배치하세요.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"라잉 레그레이즈",unit:"bodyweight",tip:"허리가 뜨지 않게 복부에 힘을 주고 다리를 천천히 올렸다 내립니다.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
+      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }
+    ] },
+    { id: "cablecrunch", name: "케이블 크런치", unit: "kg", tip: "엉덩이 위치를 크게 움직이지 않고 갈비뼈를 골반 쪽으로 말아 복부를 수축하세요. 팔로 로프를 당기지 않습니다.", breath: "말아 내릴 때 내쉬고, 펼 때 들이쉬세요", substitutes: [{name:"맨몸 크런치",unit:"bodyweight",tip:"허리를 바닥에 붙이고 복부로 상체를 짧게 말아올립니다.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:20,rest:45},{value:null,reps:20,rest:45}]}], sets: [
+      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
+    ] },
+    { id: "woodchop", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 양손으로 잡고 몸통을 회전해 대각선 방향으로 당깁니다. 팔로만 당기지 말고 복사근과 몸통 회전에 집중하세요. 좌우 동일하게 수행합니다.", breath: "당길 때 내쉬고, 돌아올 때 들이쉬세요", substitutes: [{name:"러시안 트위스트",unit:"bodyweight",tip:"상체를 약간 뒤로 기울이고 좌우로 천천히 회전하세요.",breath:"회전할 때 내쉬고, 중앙에서 들이쉬세요",sets:[{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45}]}], sets: [
+      { value: 20, reps: 15, rest: 45 }, { value: 25, reps: 12, rest: 45 }, { value: 30, reps: 10, rest: 45 }, { value: 30, reps: 10, rest: 45 }
+    ] },
+    { id: "plank", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 아래에 두고 머리부터 발끝까지 일직선을 유지합니다. 허리가 처지지 않도록 복부와 엉덩이에 힘을 주세요.", breath: "숨을 참지 말고 편안하게 이어가세요", substitutes: [{name:"버드독",unit:"sec",defaultWorkSec:40,tip:"네발 자세에서 반대 팔과 다리를 뻗고 몸통이 흔들리지 않게 유지하세요.",breath:"편안하게 호흡하세요",sets:[{value:40,reps:null,rest:40},{value:40,reps:null,rest:40}]}], sets: [
+      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
+    ] },
   ],
-  rest: [
-    { id: "hangingraise3", name: "행잉 니레이즈", unit: "bodyweight", tip: "철봉에 매달려 반동 없이 무릎(또는 다리)을 배 쪽으로 끌어올리세요. 그립력이 먼저 지치니 코어 운동 중 가장 먼저 배치! 흔들림 없이 천천히 컨트롤하는 게 핵심!", breath: "다리를 끌어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "라잉 레그레이즈", tip: "바닥에 누워 다리를 곧게 펴고 천천히 들어올렸다 내리세요. 허리가 뜨지 않게 아랫배에 힘을 주세요. 철봉이 없어도 가능합니다.", breath: "다리를 들어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }, { value: null, reps: 15, rest: 45 }] }], sets: [
-      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 } ] },
-    { id: "cablecrunch3", name: "케이블 크런치", unit: "kg", tip: "무릎을 꿇고 케이블 로프를 잡은 뒤, 허리가 아니라 복부의 힘으로 상체를 둥글게 말아 내리세요. 엉덩이는 고정하고 팔로 당기지 않도록!", breath: "말아 내릴 때 숨을 내쉬고, 펼 때 들이쉬세요", substitutes: [{ name: "맨몸 크런치", tip: "바닥에 누워 무릎을 세우고, 허리는 바닥에 붙인 채 상체를 살짝 말아 올리세요.", breath: "말아 올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 45 }, { value: null, reps: 20, rest: 0 }] }], sets: [
-      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 0 } ] },
-        { id: "woodchop3", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 몸 옆 위쪽(또는 아래쪽)에 걸고 양손으로 잡은 뒤, 팔을 편 채로 몸통을 회전시켜 반대쪽 아래(또는 위)로 대각선으로 당기세요. 팔이 아니라 몸통 회전으로 당긴다는 느낌으로, 좌우 번갈아 진행합니다.", breath: "당길 때 숨을 내쉬고, 제자리로 돌아올 때 들이쉬세요", substitutes: [{ name: "맨몸 러시안 트위스트", tip: "바닥에 앉아 무릎을 살짝 굽히고 상체를 뒤로 살짝 기울인 뒤, 양손을 모아 좌우로 번갈아 바닥을 터치하세요.", breath: "회전할 때 숨을 내쉬고, 반대쪽으로 돌아올 때 들이쉬세요", unit: "bodyweight", sets: [{ value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }, { value: null, reps: 16, rest: 45 }] }], sets: [
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-        { value: 15, reps: 12, rest: 45 },
-      ] },
-{ id: "sideplank3", name: "사이드 플랭크", unit: "sec", defaultWorkSec: 30, tip: "옆으로 누워 팔꿈치를 어깨 바로 아래 두고, 엉덩이를 들어 몸을 일직선으로 유지하세요. 골반이 처지거나 회전하지 않게, 좌우 번갈아 진행하며 옆구리(복사근)를 집중적으로 자극합니다.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "니 사이드 플랭크(무릎 버전)", tip: "무릎을 굽혀 바닥에 대고 지지하면 강도가 낮아져요. 팔꿈치부터 무릎까지 일직선을 유지하세요.", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", unit: "sec", defaultWorkSec: 30, sets: [{ value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }, { value: 30, reps: null, rest: 30 }] }], sets: [
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-        { value: 30, reps: null, rest: 30 },
-      ] },
-    { id: "plank3", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 바로 아래 두고, 엉덩이가 뜨거나 처지지 않게 몸을 일직선으로. 허리가 내려가지 않게 배에 힘을 주고 호흡은 편하게!", breath: "자세를 유지하며 숨을 참지 말고 편안하게 이어가세요", substitutes: [{ name: "버드독", tip: "네발 기기 자세에서 반대쪽 팔과 다리를 동시에 뻗어 3초 유지 후 반대로. 허리가 흔들리지 않게 코어에 힘을 주세요.", breath: "뻗을 때 숨을 내쉬고, 제자리로 올 때 들이쉬세요", unit: "sec", defaultWorkSec: 40, sets: [{ value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }] }], sets: [
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 },
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 } ] },
-  ],
+  lower: [],
+  rest: [],
 };
 
 const CARDIO_OPTIONS = {
-  upper: [
-    {
-      key: "running",
-      label: "러닝",
-      type: "treadmill",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 0, speed: 6 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 0, highSpeed: 9, highSeconds: 2 * 60, lowIncline: 0, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 0, speed: 6 } },
-      ],
-    },
-    {
-      key: "stairs",
-      label: "계단(스텝밀)",
-      type: "stairs",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 5 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highLevel: 8, highSeconds: 2 * 60, lowLevel: 5, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 5 } },
-      ],
-    },
-    {
-      key: "treadmill",
-      label: "트레드밀(경사)",
-      type: "treadmill",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 6 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 7, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 6 } },
-      ],
-    },
-    {
-      key: "bike",
-      label: "자전거",
-      type: "bike",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 80 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 150, highSeconds: 2 * 60, lowWatts: 80, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 80 } },
-      ],
-    },
-  ],
+  upper: [],
   lower: [
     {
-      key: "bike",
-      label: "자전거",
-      type: "bike",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { watts: 50 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highWatts: 90, highSeconds: 2 * 60, lowWatts: 50, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { watts: 50 } },
-      ],
-    },
-    {
       key: "treadmill",
-      label: "트레드밀",
+      label: "트레드밀 60분",
       type: "treadmill",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { incline: 3, speed: 6 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 3, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { incline: 3, speed: 6 } },
+        { key: "main", label: "경사 인터벌", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 4, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "steady", label: "고정 걷기", seconds: 20 * 60, fields: { incline: 5, speed: 6 } },
+        { key: "finish", label: "마무리 걷기", seconds: 10 * 60, fields: { incline: 4, speed: 6 } },
       ],
     },
     {
       key: "stairs",
-      label: "계단(비추천)",
+      label: "천국의 계단 60분",
       type: "stairs",
       phases: [
-        { key: "warmup", label: "워밍업", seconds: 1 * 60, fields: { level: 3 } },
-        { key: "main", label: "본운동", seconds: 30 * 60, fields: { highLevel: 4, highSeconds: 2 * 60, lowLevel: 3, lowSeconds: 1 * 60, reps: 10 } },
-        { key: "cooldown", label: "쿨다운", seconds: 3 * 60, fields: { level: 3 } },
+        { key: "warmup", label: "워밍업", seconds: 10 * 60, fields: { level: 3 } },
+        { key: "main", label: "본운동", seconds: 39 * 60, fields: { highLevel: 6, highSeconds: 2 * 60, lowLevel: 4, lowSeconds: 1 * 60, reps: 13 } },
+        { key: "cooldown", label: "마무리", seconds: 11 * 60, fields: { level: 3 } },
       ],
     },
   ],
-  rest: [
-    {
-      key: "running",
-      label: "러닝(걷기↔뛰기)",
-      type: "treadmill",
-      phases: [
-        { key: "warmup", label: "워밍업", seconds: 5 * 60, fields: { incline: 0, speed: 5.5 } },
-        { key: "main", label: "본운동", seconds: 18 * 60, fields: { highIncline: 0, highSpeed: 8, highSeconds: 1 * 60, lowIncline: 0, lowSpeed: 5.5, lowSeconds: 2 * 60, reps: 6 } },
-        { key: "cooldown", label: "쿨다운", seconds: 4 * 60, fields: { incline: 0, speed: 4.5 } },
-      ],
-    },
-    {
-      key: "walk",
-      label: "가벼운 유산소",
-      type: "treadmill",
-      phases: [{ key: "walk", label: "가벼운 유산소", seconds: 25 * 60, fields: { incline: 0, speed: 5.5 } }],
-    },
-  ],
+  rest: [],
 };
-
 
 // ---------- Helpers ----------
 const pad = (n) => String(n).padStart(2, "0");
@@ -273,7 +167,41 @@ const state = {
   order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
-const DEFAULT_UNSELECTED = ["lateral", "reardelt", "forearm", "tricep"];
+const DEFAULT_UNSELECTED = ["woodchop"];
+
+// v15 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
+// 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
+(function migrateToFullBodyCardioSplit() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 15;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+
+  const migratedConfigs = { ...state.configs };
+  EXERCISES.upper.forEach((ex) => {
+    const old = state.configs[ex.id];
+    const desired = ex.sets.map((set) => ({ ...set }));
+    if (old && Array.isArray(old.sets) && old.sets.length) {
+      const source = old.sets.length > desired.length ? old.sets.slice(-desired.length) : old.sets;
+      source.forEach((set, i) => {
+        if (!desired[i]) return;
+        desired[i] = {
+          ...desired[i],
+          value: set.value !== undefined ? set.value : desired[i].value,
+          reps: set.reps !== undefined ? set.reps : desired[i].reps,
+          rest: set.rest !== undefined ? set.rest : desired[i].rest,
+        };
+      });
+    }
+    migratedConfigs[ex.id] = { workSec: ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: desired };
+  });
+  state.configs = migratedConfigs;
+  state.selection = { ...state.selection, upper: {} };
+  state.order = { ...state.order, upper: EXERCISES.upper.map((e) => e.id) };
+  lsSet("wt_exercise_configs", state.configs);
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet("wt_exercise_order", state.order);
+  lsSet(VERSION_KEY, VERSION);
+})();
 
 function isSelected(dayType, exId) {
   const stored = state.selection[dayType];
@@ -320,12 +248,23 @@ function moveExercise(dayType, exId, dir) {
   render();
 }
 
+function cardioChoiceStorageKey(dayType) {
+  return dayType === "lower" ? `${dayType}:${getDayLabel(state.selectedDate)}` : dayType;
+}
+
 function getCardioChoice(dayType) {
-  return state.cardioChoice[dayType] || CARDIO_OPTIONS[dayType][0].key;
+  const options = CARDIO_OPTIONS[dayType] || [];
+  if (!options.length) return null;
+  const storageKey = cardioChoiceStorageKey(dayType);
+  if (state.cardioChoice[storageKey]) return state.cardioChoice[storageKey];
+  // 기본 배치: 화/토 트레드밀, 목 천국의 계단
+  if (dayType === "lower" && getDayLabel(state.selectedDate) === "목") return "stairs";
+  return options[0].key;
 }
 
 function setCardioChoiceFor(dayType, key) {
-  const next = { ...state.cardioChoice, [dayType]: key };
+  const storageKey = cardioChoiceStorageKey(dayType);
+  const next = { ...state.cardioChoice, [storageKey]: key };
   state.cardioChoice = next;
   lsSet("wt_cardio_choice", next);
   render();
@@ -352,9 +291,9 @@ function updateCardioField(dayType, optionKey, phaseKey, fieldName, rawValue) {
 function buildCardioDetail(type, fields, isMain) {
   if (type === "treadmill") {
     if (isMain) {
-      return `경사 ${fields.highIncline}도·${fields.highSpeed}km/h ${Math.round(fields.highSeconds / 60)}분 ↔ 경사 ${fields.lowIncline}도·${fields.lowSpeed}km/h ${Math.round(fields.lowSeconds / 60)}분, ${fields.reps}회 반복`;
+      return `경사 ${fields.highIncline}%·${fields.highSpeed}km/h ${Math.round(fields.highSeconds / 60)}분 ↔ 경사 ${fields.lowIncline}%·${fields.lowSpeed}km/h ${Math.round(fields.lowSeconds / 60)}분, ${fields.reps}회 반복`;
     }
-    return `경사 ${fields.incline}도 · 시속 ${fields.speed}km`;
+    return `경사 ${fields.incline}% · 시속 ${fields.speed}km`;
   }
   if (type === "bike") {
     if (isMain) {
@@ -414,9 +353,9 @@ function applyProfile(p) {
     });
 
   const disableIds = [];
-  if (p.issues.includes("허리디스크")) disableIds.push("rdl", "hangingraise1", "hangingraise2", "hangingraise3");
-  if (p.issues.includes("무릎")) disableIds.push("bulgarian");
-  if (p.minutes <= 30) disableIds.push("flye", "ohp", "calfraise");
+  if (p.issues.includes("허리디스크")) disableIds.push("rdl", "hangingraise");
+  if (p.issues.includes("무릎")) disableIds.push("legpress");
+  if (p.minutes <= 30) disableIds.push("flye", "ohp", "lateral", "reardelt");
   else if (p.minutes <= 45) disableIds.push("flye");
 
   const newSelection = { ...state.selection };
@@ -710,8 +649,8 @@ function calendarHTML() {
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${cellsHTML}</div>
       <div style="display:flex;gap:14px;margin-top:16px;font-size:12px;color:#8A93A3">
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.upper.color};display:inline-block"></span> 상체</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.lower.color};display:inline-block"></span> 하체</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.upper.color};display:inline-block"></span> 전신 웨이트</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.lower.color};display:inline-block"></span> 유산소</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.rest.color};display:inline-block"></span> 휴식</span>
       </div>
     </div>
@@ -892,8 +831,13 @@ function dayHTML() {
   const dateObj = parseLocalDate(state.selectedDate);
   const dateLabel = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${getDayLabel(state.selectedDate)})`;
   const blockRunning = !!state.activeExerciseId;
+  const progressHTML = dayType === "upper"
+    ? `<div style="margin-top:14px;height:6px;background:#262B34;border-radius:3px;overflow:hidden"><div style="width:${totalSets ? (doneSets / totalSets) * 100 : 0}%;height:100%;background:#4CAF7D;transition:width .3s"></div></div><div style="font-size:12px;color:#8A93A3;margin-top:6px">${doneSets} / ${totalSets} 세트 완료</div>`
+    : dayType === "lower"
+      ? `<div style="margin-top:14px;font-size:12px;color:${state.completed.cardio ? "#4CAF7D" : "#8A93A3"}">${state.completed.cardio ? "✓ 오늘 유산소 60분 완료" : "유산소 60분을 완료하면 달력에 기록됩니다."}</div>`
+      : `<div style="margin-top:14px;font-size:12px;color:#8A93A3">회복일 · 운동 기록 없음</div>`;
 
-  const selectionHTML = `
+  const selectionHTML = dayType === "upper" ? `
     <div class="card">
       <div data-toggleselection style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer">
         <div style="font-size:14px;font-weight:700">운동 선택</div>
@@ -926,14 +870,14 @@ function dayHTML() {
             </div>`
           : ""
       }
-    </div>`;
+    </div>` : "";
 
-  const cardioOptions = CARDIO_OPTIONS[dayType];
-  const cardioChoiceKey = getCardioChoice(dayType);
-  const activeCardioOption = cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0];
-  const cardioPhases = activeCardioOption.phases;
-  const cardioType = activeCardioOption.type;
-  const cardioEditKey = `${dayType}:${cardioChoiceKey}`;
+  const cardioOptions = CARDIO_OPTIONS[dayType] || [];
+  const cardioChoiceKey = cardioOptions.length ? getCardioChoice(dayType) : null;
+  const activeCardioOption = cardioOptions.length ? (cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0]) : null;
+  const cardioPhases = activeCardioOption ? activeCardioOption.phases : [];
+  const cardioType = activeCardioOption ? activeCardioOption.type : null;
+  const cardioEditKey = `${dayType}:${cardioChoiceKey || "none"}`;
   const isCardioEditOpen = !!state.cardioEditOpen[cardioEditKey];
   const cardioFieldStyle = "width:64px;background:#14161A;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:5px 4px;font-family:ui-monospace,monospace;font-size:13px;text-align:center;display:block;margin-top:3px";
   const cardioTabsHTML =
@@ -955,8 +899,8 @@ function dayHTML() {
     let inputs = "";
     if (cardioType === "treadmill") {
       inputs = isMain
-        ? inp("고강도 경사", "highIncline", fields.highIncline) + inp("고강도 속도", "highSpeed", fields.highSpeed) + inp("저강도 경사", "lowIncline", fields.lowIncline) + inp("저강도 속도", "lowSpeed", fields.lowSpeed)
-        : inp("경사(도)", "incline", fields.incline) + inp("속도(km/h)", "speed", fields.speed);
+        ? inp("고강도 경사(%)", "highIncline", fields.highIncline) + inp("고강도 속도", "highSpeed", fields.highSpeed) + inp("저강도 경사(%)", "lowIncline", fields.lowIncline) + inp("저강도 속도", "lowSpeed", fields.lowSpeed)
+        : inp("경사(%)", "incline", fields.incline) + inp("속도(km/h)", "speed", fields.speed);
     } else if (cardioType === "bike") {
       inputs = isMain ? inp("고강도 W", "highWatts", fields.highWatts) + inp("저강도 W", "lowWatts", fields.lowWatts) : inp("목표 W", "watts", fields.watts);
     } else if (cardioType === "stairs") {
@@ -965,7 +909,7 @@ function dayHTML() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${inputs}</div>`;
   };
 
-  const cardioHTML = `
+  const cardioHTML = activeCardioOption ? `
     <div class="card" style="padding:14px;margin-top:4px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div class="mono" style="font-size:14px;color:#3E8FB0;width:22px">${pad(exercises.length + 1)}</div>
@@ -992,7 +936,14 @@ function dayHTML() {
           })
           .join("")}
       </div>
-    </div>`;
+      <button data-startcardio="all" style="width:100%;margin-top:12px;background:#3E8FB0;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:#14161A;cursor:pointer">▶ ${activeCardioOption.label} 전체 자동 진행</button>
+      ${state.completed.cardio ? '<div style="margin-top:10px;color:#4CAF7D;font-size:13px;font-weight:700">✓ 오늘 유산소 완료</div>' : ''}
+    </div>` : dayType === "rest" ? `
+      <div class="card" style="padding:24px 18px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">😴</div>
+        <div style="font-size:18px;font-weight:700">오늘은 완전 휴식</div>
+        <div style="font-size:13px;color:#8A93A3;margin-top:8px;line-height:1.6">웨이트와 유산소를 쉬고 회복에 집중하세요.</div>
+      </div>` : "";
 
   return `
     <div style="padding-bottom:${state.timer ? 110 : 24}px">
@@ -1015,10 +966,7 @@ function dayHTML() {
           <div class="card" style="flex:1;padding:8px 10px;font-size:12px;color:#8A93A3">권장 소요시간 <span style="color:#ECEEF2;font-weight:700">${info.duration}분</span></div>
           <div class="card" style="flex:1;padding:8px 10px;font-size:12px;color:#8A93A3;display:flex;align-items:center;gap:4px">🔥 예상 소모 <span style="color:#ECEEF2;font-weight:700">약 ${info.calories}kcal</span></div>
         </div>
-        <div style="margin-top:14px;height:6px;background:#262B34;border-radius:3px;overflow:hidden">
-          <div style="width:${totalSets ? (doneSets / totalSets) * 100 : 0}%;height:100%;background:#4CAF7D;transition:width .3s"></div>
-        </div>
-        <div style="font-size:12px;color:#8A93A3;margin-top:6px">${doneSets} / ${totalSets} 세트 완료</div>
+        ${progressHTML}
       </div>
       <div style="height:14px"></div>
       <div style="padding:0 16px;margin-bottom:10px">
@@ -1026,7 +974,7 @@ function dayHTML() {
       </div>
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
         ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"};display:flex;align-items:center;justify-content:center;gap:8px">▶ ${info.label} 오늘 운동 전체 자동 진행 (${exercises.length}종목)</button>` : ""}
-        <div style="font-size:12px;color:#8A93A3;text-align:center;margin-top:-2px">위 버튼은 세트별 30초 작업 + 운동별 휴식시간까지 전부 자동으로 이어집니다. 아래에서 운동 하나씩 개별로 시작할 수도 있어요.</div>
+        ${dayType === "upper" ? '<div style="font-size:12px;color:#8A93A3;text-align:center;margin-top:-2px">세트별 작업과 휴식시간을 자동으로 이어서 진행합니다. 아래에서 운동 하나씩 시작할 수도 있어요.</div>' : ''}
       </div>
       <div style="height:4px"></div>
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
@@ -1192,6 +1140,19 @@ function finishActiveTimer() {
   }
   if (t && (t.kind === "setWork" || t.kind === "setRest")) {
     handleSetTimerFinish(t);
+  } else if (t && t.kind === "cardioProgram") {
+    const dayType = getDayType(state.selectedDate);
+    const option = (CARDIO_OPTIONS[dayType] || []).find((o) => o.key === t.optionKey);
+    const nextIdx = t.phaseIndex + 1;
+    if (option && nextIdx < option.phases.length) {
+      startCardioProgramPhase(option, nextIdx, false);
+    } else {
+      state.completed.cardio = true;
+      saveProgress();
+      updateSummary(state.selectedDate, true);
+      state.timer = null;
+      speak("오늘 유산소 60분을 완료했습니다. 수고하셨습니다.");
+    }
   } else {
     state.timer = null;
   }
@@ -1200,11 +1161,41 @@ function finishActiveTimer() {
 }
 
 function startCardioPhaseTimer(label, seconds) {
+  startElapsedClock();
   speak(`${label}입니다. ${Math.round(seconds / 60)}분간 진행하세요.`);
   clearInterval(state.timerHandle);
-  state.timer = { label, remaining: seconds, total: seconds };
+  state.timer = { kind: "cardioSingle", label, remaining: seconds, total: seconds };
   render();
   startTimerInterval();
+}
+
+function startCardioProgramPhase(option, phaseIndex, shouldRender = true) {
+  const phase = option.phases[phaseIndex];
+  if (!phase) return;
+  startElapsedClock();
+  speak(`${phase.label}입니다. ${Math.round(phase.seconds / 60)}분간 진행하세요.`);
+  clearInterval(state.timerHandle);
+  state.timer = {
+    kind: "cardioProgram",
+    label: `${option.label} · ${phase.label}`,
+    optionKey: option.key,
+    phaseIndex,
+    remaining: phase.seconds,
+    total: phase.seconds,
+  };
+  if (shouldRender) render();
+  startTimerInterval();
+}
+
+function startCardioProgram() {
+  const dayType = getDayType(state.selectedDate);
+  const options = CARDIO_OPTIONS[dayType] || [];
+  const option = options.find((o) => o.key === getCardioChoice(dayType)) || options[0];
+  if (!option) return;
+  state.completed.cardio = false;
+  saveProgress();
+  updateSummary(state.selectedDate, false);
+  startCardioProgramPhase(option, 0);
 }
 
 function skipActiveTimer() {
@@ -1476,6 +1467,9 @@ function attachHandlers() {
       if (ex) removeSet(ex, Number(idx));
     };
   });
+
+  const startCardioAllBtn = document.querySelector("[data-startcardio=\"all\"]");
+  if (startCardioAllBtn) startCardioAllBtn.onclick = startCardioProgram;
 
   document.querySelectorAll("[data-cardio]").forEach((el) => {
     el.onclick = () => {

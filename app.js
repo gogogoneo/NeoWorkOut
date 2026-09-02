@@ -26,7 +26,10 @@ const EXERCISES = {
     { id: "dips", name: "어시스트 머신 딥스", unit: "kg", tip: "가슴 자극을 위해 상체를 약간 앞으로 기울이고, 어깨가 과하게 내려가지 않는 범위에서 내려갔다 밀어올리세요. 어시스트 숫자가 클수록 쉬워집니다.", breath: "밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{ name:"벤치 딥스",unit:"bodyweight",tip:"어깨가 불편하지 않은 범위에서 천천히 수행하세요.",breath:"밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 40, reps: 12, rest: 90 }, { value: 35, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }
     ] },
-    { id: "flye", name: "인클라인 덤벨 플라이", unit: "kg", tip: "벤치를 약 20~30도로 세우고 팔꿈치를 살짝 굽힌 상태로 고정합니다. 가슴 상부가 늘어나는 범위까지만 벌렸다가 가슴으로 모으세요. 무게보다 가동범위와 수축이 우선입니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"인클라인 와이드 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 넓게 잡아 가슴의 늘어남을 느끼며 수행하세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+    { id: "incline", name: "인클라인 덤벨프레스", unit: "kg", tip: "벤치를 약 30도로 세우고 덤벨을 가슴 윗부분 옆으로 천천히 내렸다가 위로 밀어올리세요. 어깨가 들리지 않게 견갑을 고정하고 가슴 상부 수축에 집중합니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"인클라인 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 몸을 일직선으로 유지하며 가슴을 벤치 쪽으로 내렸다가 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+      { value: 10, reps: 12, rest: 90 }, { value: 12, reps: 12, rest: 90 }, { value: 12, reps: 10, rest: 90 }
+    ] },
+    { id: "flye", name: "덤벨 플라이", unit: "kg", tip: "평벤치에 누워 팔꿈치를 살짝 굽힌 채 고정하고 양팔을 큰 아치로 벌렸다가 가슴 앞에서 모으세요. 무게보다 가슴의 스트레칭과 수축을 우선합니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"와이드 푸시업",unit:"bodyweight",tip:"손 간격을 어깨보다 넓게 잡고 가슴이 충분히 늘어나는 범위까지 천천히 내려갔다 밀어올리세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
       { value: 8, reps: 12, rest: 60 }, { value: 10, reps: 12, rest: 60 }, { value: 10, reps: 10, rest: 60 }
     ] },
 
@@ -44,6 +47,13 @@ const EXERCISES = {
     ] },
     { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝 굽히고 엉덩이를 뒤로 보내며 덤벨을 정강이 가까이 내립니다. 햄스트링이 충분히 늘어나면 엉덩이 힘으로 일어섭니다. 등이 말리지 않게 합니다.", breath: "일어설 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }
+    ] },
+    // 선택 하체: 기본 OFF, 필요할 때 운동 선택에서 켜기
+    { id: "bulgarian", name: "불가리안 스쿼트 (다리당)", unit: "bodyweight", tip: "뒷발을 벤치에 걸고 앞발에 체중을 실어 천천히 내려갔다 일어서세요. 무릎과 발끝 방향을 맞추고 균형이 흔들리지 않는 범위에서 수행합니다.", breath: "일어설 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{name:"제자리 런지",unit:"bodyweight",tip:"한 발을 앞에 두고 제자리에서 천천히 내려갔다 일어서세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+      { value: null, reps: 10, rest: 60 }, { value: null, reps: 10, rest: 60 }, { value: null, reps: 10, rest: 60 }
+    ] },
+    { id: "calfraise", name: "카프 레이즈", unit: "kg", tip: "발볼로 지지하고 뒤꿈치를 충분히 내린 뒤 최대한 높이 올리세요. 꼭대기에서 잠깐 멈추고 반동 없이 천천히 반복합니다.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"맨몸 카프 레이즈",unit:"bodyweight",tip:"계단 끝이나 평지에서 뒤꿈치를 천천히 올렸다 내리며 종아리 수축을 느끼세요.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:20,rest:45},{value:null,reps:20,rest:45},{value:null,reps:20,rest:45}]}], sets: [
+      { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }
     ] },
 
     // 어깨·이두: 복합운동에서 보조 자극을 받으므로 직접 운동은 각 2세트
@@ -89,6 +99,15 @@ const CARDIO_OPTIONS = {
         { key: "main", label: "경사 인터벌", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 4, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
         { key: "steady", label: "고정 걷기", seconds: 20 * 60, fields: { incline: 5, speed: 6 } },
         { key: "finish", label: "마무리 걷기", seconds: 10 * 60, fields: { incline: 4, speed: 6 } },
+      ],
+    },
+    {
+      key: "mixed5050",
+      label: "트레드밀 30분 + 스텝밀 30분",
+      type: "mixed",
+      phases: [
+        { key: "treadmill30", label: "트레드밀", type: "treadmill", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 4, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "stairs30", label: "스텝밀", type: "stairs", seconds: 30 * 60, fields: { highLevel: 6, highSeconds: 2 * 60, lowLevel: 4, lowSeconds: 1 * 60, reps: 10 } },
       ],
     },
     {
@@ -167,13 +186,13 @@ const state = {
   order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
-const DEFAULT_UNSELECTED = ["woodchop"];
+const DEFAULT_UNSELECTED = ["woodchop", "bulgarian", "calfraise"];
 
-// v15 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
+// v16 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
 // 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
 (function migrateToFullBodyCardioSplit() {
   const VERSION_KEY = "wt_program_version";
-  const VERSION = 15;
+  const VERSION = 16;
   if (lsGet(VERSION_KEY, 0) >= VERSION) return;
 
   const migratedConfigs = { ...state.configs };
@@ -257,8 +276,8 @@ function getCardioChoice(dayType) {
   if (!options.length) return null;
   const storageKey = cardioChoiceStorageKey(dayType);
   if (state.cardioChoice[storageKey]) return state.cardioChoice[storageKey];
-  // 기본 배치: 화/토 트레드밀, 목 천국의 계단
-  if (dayType === "lower" && getDayLabel(state.selectedDate) === "목") return "stairs";
+  // 기본 배치: 화/토 트레드밀, 목 트레드밀 30분 + 스텝밀 30분
+  if (dayType === "lower" && getDayLabel(state.selectedDate) === "목") return "mixed5050";
   return options[0].key;
 }
 
@@ -897,13 +916,14 @@ function dayHTML() {
     const inp = (label, fieldName, value) =>
       `<label style="font-size:11px;color:#8A93A3">${label}<input type="number" data-cardiofield="${dayType}|${cardioChoiceKey}|${phase.key}|${fieldName}" value="${value}" style="${cardioFieldStyle}" /></label>`;
     let inputs = "";
-    if (cardioType === "treadmill") {
+    const phaseType = phase.type || cardioType;
+    if (phaseType === "treadmill") {
       inputs = isMain
         ? inp("고강도 경사(%)", "highIncline", fields.highIncline) + inp("고강도 속도", "highSpeed", fields.highSpeed) + inp("저강도 경사(%)", "lowIncline", fields.lowIncline) + inp("저강도 속도", "lowSpeed", fields.lowSpeed)
         : inp("경사(%)", "incline", fields.incline) + inp("속도(km/h)", "speed", fields.speed);
-    } else if (cardioType === "bike") {
+    } else if (phaseType === "bike") {
       inputs = isMain ? inp("고강도 W", "highWatts", fields.highWatts) + inp("저강도 W", "lowWatts", fields.lowWatts) : inp("목표 W", "watts", fields.watts);
-    } else if (cardioType === "stairs") {
+    } else if (phaseType === "stairs") {
       inputs = isMain ? inp("고강도 레벨", "highLevel", fields.highLevel) + inp("저강도 레벨", "lowLevel", fields.lowLevel) : inp("레벨", "level", fields.level);
     }
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${inputs}</div>`;
@@ -921,8 +941,9 @@ function dayHTML() {
         ${cardioPhases
           .map((p) => {
             const fields = getCardioFields(dayType, cardioChoiceKey, p);
-            const isMain = p.key === "main";
-            const detail = buildCardioDetail(cardioType, fields, isMain);
+            const phaseType = p.type || cardioType;
+            const isMain = p.key === "main" || fields.highIncline != null || fields.highLevel != null || fields.highWatts != null;
+            const detail = buildCardioDetail(phaseType, fields, isMain);
             return `<div>
               <button data-cardio="${p.key}" style="display:flex;justify-content:space-between;align-items:center;background:#262B34;border:1px solid #333944;border-radius:8px;padding:10px 12px;color:#ECEEF2;cursor:pointer;text-align:left;width:100%">
                 <div>

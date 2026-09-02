@@ -172,6 +172,8 @@ const state = {
   activeSetIdx: 0,
   selectedExerciseId: null, // 목록에서 선택한 운동만 상세 표시
   selectedCardioKey: null, // 유산소 데이에서 선택한 유산소 유형만 상세 표시
+  returnListTarget: null, // 상세 진입 전 목록에서 눌렀던 항목
+  pendingListScroll: null, // 목록 복귀 후 스크롤할 항목
   queue: null, // remaining exercise ids to auto-run after current one (block mode)
   sessionStart: null,
   elapsedHandle: null,
@@ -226,8 +228,9 @@ const DEFAULT_UNSELECTED = ["woodchop", "bulgarian", "calfraise"];
     migratedConfigs[ex.id] = { workSec: ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: desired };
   });
   state.configs = migratedConfigs;
-  state.selection = { ...state.selection, upper: {} };
-  state.order = { ...state.order, upper: EXERCISES.upper.map((e) => e.id) };
+  // 사용자 설정 보존: 이미 저장된 선택/순서가 있으면 업데이트 시 덮어쓰지 않습니다.
+  state.selection = { ...state.selection, upper: state.selection.upper || {} };
+  state.order = { ...state.order, upper: (state.order.upper && state.order.upper.length) ? state.order.upper : EXERCISES.upper.map((e) => e.id) };
   lsSet("wt_exercise_configs", state.configs);
   lsSet("wt_exercise_selection", state.selection);
   lsSet("wt_exercise_order", state.order);
@@ -244,8 +247,9 @@ const DEFAULT_UNSELECTED = ["woodchop", "bulgarian", "calfraise"];
     if (!migratedConfigs[ex.id]) migratedConfigs[ex.id] = { workSec: ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: ex.sets.map((set) => ({ ...set })) };
   });
   state.configs = migratedConfigs;
-  state.selection = { ...state.selection, lower: {} };
-  state.order = { ...state.order, lower: EXERCISES.lower.map((e) => e.id) };
+  // 사용자 설정 보존: 이미 저장된 선택/순서가 있으면 업데이트 시 덮어쓰지 않습니다.
+  state.selection = { ...state.selection, lower: state.selection.lower || {} };
+  state.order = { ...state.order, lower: (state.order.lower && state.order.lower.length) ? state.order.lower : EXERCISES.lower.map((e) => e.id) };
   lsSet("wt_exercise_configs", state.configs);
   lsSet("wt_exercise_selection", state.selection);
   lsSet("wt_exercise_order", state.order);
@@ -327,6 +331,23 @@ function getCardioFields(dayType, optionKey, phase) {
   const key = cardioFieldKey(dayType, optionKey, phase.key);
   const stored = state.cardioConfig[key];
   return stored ? { ...phase.fields, ...stored } : phase.fields;
+}
+
+function getCardioDurationSeconds(dayType, optionKey, phase) {
+  const key = cardioFieldKey(dayType, optionKey, phase.key);
+  const stored = state.cardioConfig[key] || {};
+  const mins = Number(stored.durationMin);
+  if (Number.isFinite(mins) && mins > 0) return Math.round(mins * 60);
+  return phase.seconds;
+}
+
+function updateCardioDuration(dayType, optionKey, phaseKey, rawValue) {
+  const key = cardioFieldKey(dayType, optionKey, phaseKey);
+  const mins = rawValue === "" ? "" : Number(rawValue);
+  const next = { ...state.cardioConfig, [key]: { ...(state.cardioConfig[key] || {}), durationMin: mins } };
+  state.cardioConfig = next;
+  lsSet("wt_cardio_config", next);
+  render();
 }
 
 function updateCardioField(dayType, optionKey, phaseKey, fieldName, rawValue) {
@@ -700,6 +721,16 @@ function render() {
   const app = document.getElementById("app");
   app.innerHTML = state.view === "calendar" ? calendarHTML() : dayHTML();
   attachHandlers();
+
+  // 상세 화면에서 목록으로 돌아왔을 때, 방금 선택했던 항목 위치로 복귀한다.
+  if (state.pendingListScroll) {
+    const target = state.pendingListScroll;
+    state.pendingListScroll = null;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-listtarget="${target}"]`);
+      if (el) el.scrollIntoView({ behavior: "auto", block: "center" });
+    });
+  }
 }
 
 // ---------- Calendar view ----------
@@ -942,7 +973,7 @@ function exerciseOverviewHTML(exercises) {
       const effSets = getEffectiveSets(ex, cfg);
       const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length;
       const done = doneCount === effSets.length;
-      return `<button data-openexercise="${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:${i === exercises.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer">
+      return `<button data-openexercise="${ex.id}" data-listtarget="exercise:${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:${i === exercises.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer">
         <div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:700">${disp.name}</div>
@@ -1031,6 +1062,8 @@ function dayHTML() {
     if (!isCardioEditOpen) return "";
     const inp = (label, fieldName, value) =>
       `<label style="font-size:11px;color:#8A93A3">${label}<input type="number" data-cardiofield="${dayType}|${cardioChoiceKey}|${phase.key}|${fieldName}" value="${value}" style="${cardioFieldStyle}" /></label>`;
+    const durationSeconds = getCardioDurationSeconds(dayType, cardioChoiceKey, phase);
+    const durationInput = `<label style="font-size:11px;color:#F5C518">시간(분)<input type="number" min="1" step="1" data-cardioduration="${dayType}|${cardioChoiceKey}|${phase.key}" value="${Math.round(durationSeconds / 60)}" style="${cardioFieldStyle}" /></label>`;
     let inputs = "";
     const phaseType = phase.type || cardioType;
     if (phaseType === "treadmill") {
@@ -1042,7 +1075,7 @@ function dayHTML() {
     } else if (phaseType === "stairs") {
       inputs = isMain ? inp("고강도 레벨", "highLevel", fields.highLevel) + inp("저강도 레벨", "lowLevel", fields.lowLevel) : inp("레벨", "level", fields.level);
     }
-    return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${inputs}</div>`;
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${durationInput}${inputs}</div>`;
   };
 
   const cardioDayOverviewHTML = dayType === "lower" ? `<div class="card" style="overflow:hidden">
@@ -1052,9 +1085,9 @@ function dayHTML() {
     </div>
     ${exercises.map((ex, i) => {
       const cfg = getConfig(ex); const effSets = getEffectiveSets(ex, cfg); const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length; const done = doneCount === effSets.length;
-      return `<button data-openexercise="${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${ex.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
+      return `<button data-openexercise="${ex.id}" data-listtarget="exercise:${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${ex.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
     }).join('')}
-    ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${opt.label}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">컨디션에 따라 선택 · 탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
+    ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" data-listtarget="cardio:${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${opt.label}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">컨디션에 따라 선택 · 탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
   </div>` : "";
 
   const cardioHTML = activeCardioOption ? `
@@ -1078,7 +1111,7 @@ function dayHTML() {
                   <div style="font-size:14px;font-weight:600">${p.label}</div>
                   <div style="font-size:12px;color:#8A93A3">${detail}</div>
                 </div>
-                <div class="mono" style="display:flex;align-items:center;gap:6px;color:#3E8FB0">${formatTime(p.seconds)} ▶</div>
+                <div class="mono" style="display:flex;align-items:center;gap:6px;color:#3E8FB0">${formatTime(getCardioDurationSeconds(dayType, cardioChoiceKey, p))} ▶</div>
               </button>
               ${cardioEditFieldHTML(p, fields, isMain)}
             </div>`;
@@ -1270,6 +1303,8 @@ function handleSetTimerFinish(t) {
       state.activeExerciseId = null;
       state.queue = null;
       state.timer = null;
+      state.pendingListScroll = state.returnListTarget || `exercise:${t.exId}`;
+      state.returnListTarget = null;
       state.selectedExerciseId = null;
       state.selectedCardioKey = null;
     } else if (t.restSec > 0) {
@@ -1314,9 +1349,11 @@ function finishActiveTimer() {
       saveProgress();
       updateSummary(state.selectedDate, true);
       state.timer = null;
+      state.pendingListScroll = state.returnListTarget || `cardio:${t.optionKey}`;
+      state.returnListTarget = null;
       state.selectedExerciseId = null;
       state.selectedCardioKey = null;
-      speak("오늘 유산소 60분을 완료했습니다. 수고하셨습니다.");
+      speak("오늘 유산소를 완료했습니다. 수고하셨습니다.");
     }
   } else {
     state.timer = null;
@@ -1338,15 +1375,16 @@ function startCardioProgramPhase(option, phaseIndex, shouldRender = true) {
   const phase = option.phases[phaseIndex];
   if (!phase) return;
   startElapsedClock();
-  speak(`${phase.label}입니다. ${Math.round(phase.seconds / 60)}분간 진행하세요.`);
+  const phaseSeconds = getCardioDurationSeconds(getDayType(state.selectedDate), option.key, phase);
+  speak(`${phase.label}입니다. ${Math.round(phaseSeconds / 60)}분간 진행하세요.`);
   clearInterval(state.timerHandle);
   state.timer = {
     kind: "cardioProgram",
     label: `${option.label} · ${phase.label}`,
     optionKey: option.key,
     phaseIndex,
-    remaining: phase.seconds,
-    total: phase.seconds,
+    remaining: phaseSeconds,
+    total: phaseSeconds,
   };
   if (shouldRender) render();
   startTimerInterval();
@@ -1458,7 +1496,7 @@ function attachHandlers() {
         state.selectedDate = dateStr;
         loadDayState();
         state.view = "day";
-        history.pushState({ view: "day", date: dateStr }, "", "");
+        history.pushState({ view: "day", date: dateStr, subview: "list" }, "", "");
         render();
       };
     });
@@ -1540,7 +1578,9 @@ function attachHandlers() {
     el.onclick = () => {
       state.selectedCardioKey = null;
       state.selectedExerciseId = el.getAttribute("data-openexercise");
+      state.returnListTarget = `exercise:${state.selectedExerciseId}`;
       state.expanded[state.selectedExerciseId] = true;
+      history.pushState({ view: "day", date: state.selectedDate, subview: "exercise", exerciseId: state.selectedExerciseId }, "", "");
       render();
       window.scrollTo(0, 0);
     };
@@ -1552,6 +1592,8 @@ function attachHandlers() {
       const dayType = getDayType(state.selectedDate);
       state.selectedExerciseId = null;
       state.selectedCardioKey = key;
+      state.returnListTarget = `cardio:${key}`;
+      history.pushState({ view: "day", date: state.selectedDate, subview: "cardio", cardioKey: key }, "", "");
       setCardioChoiceFor(dayType, key);
       window.scrollTo(0, 0);
     };
@@ -1559,10 +1601,16 @@ function attachHandlers() {
 
   const backToExerciseList = document.getElementById("backToExerciseList");
   if (backToExerciseList) backToExerciseList.onclick = () => {
+    state.pendingListScroll = state.returnListTarget;
+    const hs = history.state || {};
+    if (hs.view === "day" && (hs.subview === "exercise" || hs.subview === "cardio")) {
+      history.back();
+      return;
+    }
+    state.returnListTarget = null;
     state.selectedExerciseId = null;
     state.selectedCardioKey = null;
     render();
-    window.scrollTo(0, 0);
   };
 
   document.querySelectorAll("[data-toggleexpand]").forEach((el) => {
@@ -1679,7 +1727,7 @@ function attachHandlers() {
       const dayType = getDayType(state.selectedDate);
       const opt = CARDIO_OPTIONS[dayType].find((o) => o.key === getCardioChoice(dayType)) || CARDIO_OPTIONS[dayType][0];
       const phase = opt.phases.find((p) => p.key === key);
-      if (phase) startCardioPhaseTimer(phase.label, phase.seconds);
+      if (phase) startCardioPhaseTimer(phase.label, getCardioDurationSeconds(dayType, getCardioChoice(dayType), phase));
     };
   });
 
@@ -1708,6 +1756,13 @@ function attachHandlers() {
     };
   });
 
+  document.querySelectorAll("[data-cardioduration]").forEach((el) => {
+    el.onchange = () => {
+      const [dayType, optionKey, phaseKey] = el.getAttribute("data-cardioduration").split("|");
+      updateCardioDuration(dayType, optionKey, phaseKey, el.value);
+    };
+  });
+
   const skipBtn = document.getElementById("skipTimer");
   if (skipBtn) skipBtn.onclick = skipActiveTimer;
 
@@ -1717,16 +1772,32 @@ function attachHandlers() {
 
 // ---------- Browser back-button navigation ----------
 window.addEventListener("popstate", (e) => {
-  const s = e.state;
-  if (s && s.view === "day" && s.date) {
-    state.selectedDate = s.date;
+  const hs = e.state || {};
+  clearInterval(state.timerHandle);
+  state.timer = null;
+
+  if (hs.view === "day" && hs.date) {
+    state.selectedDate = hs.date;
     loadDayState();
     state.view = "day";
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
+
+    if (hs.subview === "exercise" && hs.exerciseId) {
+      state.selectedExerciseId = hs.exerciseId;
+      state.returnListTarget = `exercise:${hs.exerciseId}`;
+    } else if (hs.subview === "cardio" && hs.cardioKey) {
+      state.selectedCardioKey = hs.cardioKey;
+      state.returnListTarget = `cardio:${hs.cardioKey}`;
+    } else {
+      if (state.pendingListScroll == null && state.returnListTarget) state.pendingListScroll = state.returnListTarget;
+      state.returnListTarget = null;
+    }
   } else {
-    clearInterval(state.timerHandle);
     clearInterval(state.elapsedHandle);
-    state.timer = null;
     state.view = "calendar";
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
   }
   render();
 });
@@ -1734,5 +1805,5 @@ window.addEventListener("popstate", (e) => {
 // ---------- Init ----------
 loadDayState();
 state.view = "day";
-history.replaceState({ view: "day", date: state.selectedDate }, "", "");
+history.replaceState({ view: "day", date: state.selectedDate, subview: "list" }, "", "");
 render();

@@ -112,6 +112,16 @@ const CARDIO_OPTIONS = {
       ],
     },
     {
+      key: "hybrid",
+      label: "하이브리드 60분 (걷기 + 러닝)",
+      type: "mixed",
+      phases: [
+        { key: "walk30", label: "경사 인터벌 걷기", type: "treadmill", seconds: 30 * 60, fields: { highIncline: 6, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 4, lowSpeed: 6, lowSeconds: 1 * 60, reps: 10 } },
+        { key: "run20", label: "연속 러닝", type: "treadmill", seconds: 20 * 60, fields: { incline: 0, speed: 8 } },
+        { key: "finish10", label: "마무리 걷기", type: "treadmill", seconds: 10 * 60, fields: { incline: 2, speed: 5.5 } },
+      ],
+    },
+    {
       key: "mixed5050",
       label: "트레드밀 30분 + 스텝밀 30분",
       type: "mixed",

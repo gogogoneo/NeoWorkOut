@@ -37,6 +37,10 @@ const EXERCISES = {
     { id: "cablerow", name: "시티드 케이블 로우", unit: "kg", tip: "허리를 세우고 손잡이를 배꼽 방향으로 당기며 견갑을 뒤로 모으세요. 상체 반동을 최소화합니다.", breath: "당길 때 내쉬고, 돌아갈 때 들이쉬세요", substitutes: [{name:"밴드 로우",unit:"bodyweight",tip:"밴드를 고정하고 팔꿈치를 뒤로 보내며 견갑을 모으세요.",breath:"당길 때 내쉬고, 풀 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:12,rest:60}]}], sets: [
       { value: 30, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }, { value: 40, reps: 8, rest: 90 }
     ] },
+    { id: "assisted_chinup", name: "어시스티드 친업", unit: "kg", tip: "손바닥이 몸을 향하도록 바를 잡고 가슴을 살짝 들어 올린 상태에서 팔꿈치를 아래·뒤로 끌어내리며 몸을 당기세요. 보조 중량은 8~12회를 반동 없이 수행할 수 있게 맞추고, 내려갈 때 팔을 충분히 펴 광배근이 늘어나는 느낌을 유지합니다.", breath: "몸을 당겨 올릴 때 내쉬고, 천천히 내려갈 때 들이쉬세요", substitutes: [], sets: [
+      { value: 30, reps: 12, rest: 90 }, { value: 30, reps: 10, rest: 90 }, { value: 30, reps: 8, rest: 90 }
+    ] },
+    // 기존 랫풀다운은 교체 후에도 선택 운동으로 보존 (기본 OFF)
     { id: "latpull", name: "랫풀다운", unit: "kg", tip: "가슴을 살짝 들고 바를 쇄골 쪽으로 당기세요. 몸을 뒤로 크게 젖히지 말고 팔보다 광배근으로 당긴다는 느낌을 유지합니다.", breath: "당길 때 내쉬고, 올릴 때 들이쉬세요", substitutes: [{name:"밴드 랫풀다운",unit:"bodyweight",tip:"밴드를 머리 위에 고정하고 팔꿈치를 옆구리 쪽으로 끌어내리세요.",breath:"당길 때 내쉬고, 올릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:12,rest:60}]}], sets: [
       { value: 35, reps: 12, rest: 90 }, { value: 40, reps: 10, rest: 90 }, { value: 45, reps: 8, rest: 90 }
     ] },
@@ -56,32 +60,44 @@ const EXERCISES = {
       { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }
     ] },
 
-    // 어깨·이두: 복합운동에서 보조 자극을 받으므로 직접 운동은 각 2세트
+    // 어깨·팔: 모든 운동 3세트
     { id: "ohp", name: "덤벨 오버헤드프레스", unit: "kg", tip: "코어에 힘을 주고 허리가 과하게 젖혀지지 않도록 합니다. 덤벨을 귀 옆에서 머리 위로 밀어올립니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"파이크 푸시업",unit:"bodyweight",tip:"엉덩이를 높인 역V 자세에서 머리를 바닥 쪽으로 내렸다 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
-      { value: 8, reps: 12, rest: 60 }, { value: 8, reps: 10, rest: 60 }
+      { value: 8, reps: 12, rest: 60 }, { value: 8, reps: 10, rest: 60 }, { value: 8, reps: 10, rest: 60 }
     ] },
     { id: "lateral", name: "레터럴 레이즈", unit: "kg", tip: "팔꿈치를 살짝 굽히고 팔꿈치가 먼저 올라간다는 느낌으로 어깨 높이 정도까지 들어올립니다. 반동을 최소화합니다.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 레터럴 레이즈",unit:"bodyweight",tip:"밴드를 밟고 같은 궤적으로 천천히 들어올리세요.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
-      { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
+      { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
     ] },
     { id: "reardelt", name: "리어 델트 플라이", unit: "kg", tip: "상체를 숙이고 몸통을 고정한 뒤 팔을 옆으로 벌립니다. 반동보다 후면 어깨 수축에 집중합니다.", breath: "벌릴 때 내쉬고, 모을 때 들이쉬세요", substitutes: [{name:"맨몸 리어델트 레이즈",unit:"bodyweight",tip:"상체를 숙인 뒤 무게 없이 팔을 벌리며 후면 어깨를 수축하세요.",breath:"벌릴 때 내쉬고, 모을 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
-      { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 }
+      { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 }, { value: 5, reps: 12, rest: 45 }
     ] },
-    { id: "bicep", name: "덤벨 이두 컬", unit: "kg", tip: "팔꿈치를 몸통 옆에 고정하고 반동 없이 들어올립니다. 내려갈 때도 천천히 저항을 유지하세요.", breath: "들어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 이두 컬",unit:"bodyweight",tip:"팔꿈치를 고정하고 밴드를 천천히 당겼다 돌아갑니다.",breath:"당길 때 내쉬고, 돌아갈 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:12,rest:45}]}], sets: [
-      { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 12, rest: 45 }
+    // 팔: 같은 케이블 스테이션에서 삼두 2종목 + 이두 1종목을 연속 수행
+    { id: "triceps_pushdown", name: "케이블 트라이셉스 푸시다운", unit: "kg", tip: "팔꿈치를 몸통 옆에 고정하고 어깨가 들리지 않게 한 뒤 손잡이를 아래로 끝까지 밀어 삼두를 수축하세요. 올라올 때 팔꿈치가 앞으로 움직이지 않게 합니다.", breath: "아래로 밀 때 내쉬고, 천천히 돌아올 때 들이쉬세요", substitutes: [{name:"밴드 트라이셉스 푸시다운",unit:"bodyweight",tip:"팔꿈치를 옆구리에 고정하고 밴드를 아래로 밀어 삼두를 수축하세요.",breath:"밀 때 내쉬고, 돌아올 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:12,rest:45},{value:null,reps:12,rest:45}]}], sets: [
+      { value: 20, reps: 15, rest: 45 }, { value: 25, reps: 12, rest: 45 }, { value: 25, reps: 12, rest: 45 }
+    ] },
+    { id: "triceps_overhead", name: "오버헤드 케이블 트라이셉스 익스텐션", unit: "kg", tip: "케이블을 등 뒤에서 잡고 팔꿈치를 머리 옆에 고정한 채 팔을 펴세요. 허리가 과하게 젖지 않도록 코어를 잡고 삼두 장두의 늘어남과 수축을 느낍니다.", breath: "팔을 펼 때 내쉬고, 굽혀 돌아올 때 들이쉬세요", substitutes: [{name:"덤벨 오버헤드 트라이셉스 익스텐션",unit:"kg",tip:"팔꿈치를 머리 옆에 고정하고 덤벨을 머리 뒤로 내렸다가 팔을 펴세요.",breath:"펼 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:8,reps:15,rest:45},{value:8,reps:12,rest:45},{value:8,reps:12,rest:45}]}], sets: [
+      { value: 15, reps: 15, rest: 45 }, { value: 20, reps: 12, rest: 45 }, { value: 20, reps: 12, rest: 45 }
+    ] },
+    { id: "bicep", name: "케이블 이두 컬", unit: "kg", tip: "케이블을 아래쪽에 두고 팔꿈치를 몸통 옆에 고정한 채 손잡이를 말아 올리세요. 어깨나 허리 반동 없이 이두 수축을 느끼고 내려갈 때도 천천히 버팁니다.", breath: "말아 올릴 때 내쉬고, 천천히 내릴 때 들이쉬세요", substitutes: [{name:"덤벨 이두 컬",unit:"kg",tip:"팔꿈치를 몸통 옆에 고정하고 반동 없이 들어올린 뒤 천천히 내리세요.",breath:"들어올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:6,reps:15,rest:45},{value:6,reps:12,rest:45},{value:6,reps:12,rest:45}]}], sets: [
+      { value: 10, reps: 15, rest: 45 }, { value: 10, reps: 12, rest: 45 }, { value: 10, reps: 12, rest: 45 }
+    ] },
+
+    // 기존 덤벨 이두 컬은 케이블 이두 컬로 교체했지만 선택 운동으로 보존 (기본 OFF)
+    { id: "dumbbell_bicep", name: "덤벨 이두 컬", unit: "kg", tip: "팔꿈치를 몸통 옆에 고정하고 어깨와 허리의 반동 없이 덤벨을 말아 올리세요. 꼭대기에서 이두를 수축하고 내려갈 때 천천히 버팁니다.", breath: "들어올릴 때 내쉬고, 천천히 내릴 때 들이쉬세요", substitutes: [], sets: [
+      { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
     ] },
 
     // 코어: 기존 선호 운동 유지. 우드초퍼는 선택 운동으로 기본 해제.
     { id: "hangingraise", name: "행잉 니 레이즈", unit: "bodyweight", tip: "반동 없이 골반을 말아 무릎을 배 쪽으로 끌어올립니다. 그립이 먼저 지치면 코어 운동 중 앞쪽에 배치하세요.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"라잉 레그레이즈",unit:"bodyweight",tip:"허리가 뜨지 않게 복부에 힘을 주고 다리를 천천히 올렸다 내립니다.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
-      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }
+      { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }, { value: null, reps: 12, rest: 45 }
     ] },
     { id: "cablecrunch", name: "케이블 크런치", unit: "kg", tip: "엉덩이 위치를 크게 움직이지 않고 갈비뼈를 골반 쪽으로 말아 복부를 수축하세요. 팔로 로프를 당기지 않습니다.", breath: "말아 내릴 때 내쉬고, 펼 때 들이쉬세요", substitutes: [{name:"맨몸 크런치",unit:"bodyweight",tip:"허리를 바닥에 붙이고 복부로 상체를 짧게 말아올립니다.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:20,rest:45},{value:null,reps:20,rest:45}]}], sets: [
-      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
+      { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
     ] },
     { id: "woodchop", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 양손으로 잡고 몸통을 회전해 대각선 방향으로 당깁니다. 팔로만 당기지 말고 복사근과 몸통 회전에 집중하세요. 좌우 동일하게 수행합니다.", breath: "당길 때 내쉬고, 돌아올 때 들이쉬세요", substitutes: [{name:"러시안 트위스트",unit:"bodyweight",tip:"상체를 약간 뒤로 기울이고 좌우로 천천히 회전하세요.",breath:"회전할 때 내쉬고, 중앙에서 들이쉬세요",sets:[{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45}]}], sets: [
-      { value: 20, reps: 15, rest: 45 }, { value: 25, reps: 12, rest: 45 }, { value: 30, reps: 10, rest: 45 }, { value: 30, reps: 10, rest: 45 }
+      { value: 20, reps: 15, rest: 45 }, { value: 25, reps: 12, rest: 45 }, { value: 30, reps: 10, rest: 45 }
     ] },
     { id: "plank", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 아래에 두고 머리부터 발끝까지 일직선을 유지합니다. 허리가 처지지 않도록 복부와 엉덩이에 힘을 주세요.", breath: "숨을 참지 말고 편안하게 이어가세요", substitutes: [{name:"버드독",unit:"sec",defaultWorkSec:40,tip:"네발 자세에서 반대 팔과 다리를 뻗고 몸통이 흔들리지 않게 유지하세요.",breath:"편안하게 호흡하세요",sets:[{value:40,reps:null,rest:40},{value:40,reps:null,rest:40}]}], sets: [
-      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
+      { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
     ] },
   ],
   lower: [
@@ -210,7 +226,7 @@ const state = {
   order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
-const DEFAULT_UNSELECTED = ["woodchop", "bulgarian", "calfraise"];
+const DEFAULT_UNSELECTED = ["flye", "woodchop", "bulgarian", "calfraise", "latpull", "dumbbell_bicep"];
 
 // v16 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
 // 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
@@ -570,6 +586,79 @@ function removeSet(ex, setIdx) {
   trimCompletedForExercise(ex.id);
   render();
 }
+
+// v25: 전 운동 3세트 + 케이블 팔 3종목 추가. 기존 사용자의 중량/횟수/휴식값은 유지하고 세트 수만 3개로 맞춥니다.
+(function migrateV25ThreeSetsAndCableArms() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 25;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+  const migrated = { ...state.configs };
+  ["upper", "lower"].forEach((dayType) => {
+    EXERCISES[dayType].forEach((ex) => {
+      const defaults = ex.sets.map((x) => ({ ...x })).slice(0, 3);
+      while (defaults.length < 3) defaults.push({ ...(defaults[defaults.length - 1] || { value:null, reps:12, rest:45 }) });
+      const old = migrated[ex.id];
+      if (old && Array.isArray(old.sets) && old.sets.length) {
+        const oldSets = old.sets.slice(0, 3);
+        oldSets.forEach((set, i) => {
+          defaults[i] = { ...defaults[i], ...set };
+        });
+        while (oldSets.length < 3) {
+          const source = oldSets[oldSets.length - 1] || defaults[oldSets.length];
+          defaults[oldSets.length] = { ...defaults[oldSets.length], ...source };
+          oldSets.push(source);
+        }
+      }
+      migrated[ex.id] = { workSec: (old && old.workSec) || ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: defaults };
+    });
+  });
+  state.configs = migrated;
+  // 플라이는 루틴에서는 기본 제외. 사용자가 이미 직접 ON/OFF를 저장했다면 그 선택은 존중합니다.
+  state.selection = { ...state.selection, upper: { ...(state.selection.upper || {}) } };
+  if (state.selection.upper.flye === undefined) state.selection.upper.flye = false;
+  // 기존 순서는 유지하되 새 팔 운동은 리어델트 뒤, 이두 앞에 끼워 넣습니다.
+  const baseOrder = (state.order.upper && state.order.upper.length) ? [...state.order.upper] : EXERCISES.upper.map((e) => e.id);
+  const validIds = new Set(EXERCISES.upper.map((e) => e.id));
+  let order = baseOrder.filter((id) => validIds.has(id) && id !== "triceps_pushdown" && id !== "triceps_overhead");
+  let anchor = order.indexOf("bicep");
+  if (anchor < 0) anchor = order.length;
+  order.splice(anchor, 0, "triceps_pushdown", "triceps_overhead");
+  state.order = { ...state.order, upper: order };
+  lsSet("wt_exercise_configs", state.configs);
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet("wt_exercise_order", state.order);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
+// v26: 랫풀다운을 어시스티드 친업으로 교체. 기존 랫풀다운/덤벨 컬은 삭제하지 않고 OFF로 보존.
+(function migrateToV26() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 26;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+
+  state.selection = { ...state.selection, upper: { ...(state.selection.upper || {}) } };
+  state.selection.upper.assisted_chinup = true;
+  state.selection.upper.latpull = false;
+  state.selection.upper.dumbbell_bicep = false;
+
+  // 기존 사용자의 랫풀다운 위치에 친업을 넣고, OFF 운동은 목록에 남겨 선택 화면에서 다시 켤 수 있게 유지.
+  const validIds = new Set(EXERCISES.upper.map((e) => e.id));
+  let order = (state.order.upper && state.order.upper.length) ? [...state.order.upper] : EXERCISES.upper.map((e) => e.id);
+  order = order.filter((id) => validIds.has(id) && id !== "assisted_chinup" && id !== "dumbbell_bicep");
+  let latIndex = order.indexOf("latpull");
+  if (latIndex < 0) {
+    const rowIndex = order.indexOf("cablerow");
+    latIndex = rowIndex >= 0 ? rowIndex + 1 : 0;
+  }
+  order.splice(latIndex, 0, "assisted_chinup");
+  const bicepIndex = order.indexOf("bicep");
+  order.splice(bicepIndex >= 0 ? bicepIndex + 1 : order.length, 0, "dumbbell_bicep");
+  state.order = { ...state.order, upper: order };
+
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet("wt_exercise_order", state.order);
+  lsSet(VERSION_KEY, VERSION);
+})();
 
 // ---------- Voice guidance ----------
 // Android/Chrome의 Web Speech API는 긴 문장을 한 번에 읽거나 여러 utterance를

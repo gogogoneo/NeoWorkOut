@@ -209,7 +209,7 @@ const state = {
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
   cardioConfig: lsGet("wt_cardio_config", {}), // { "dayType:optionKey:phaseKey": { field: value } }
   cardioEditOpen: {}, // { "dayType:optionKey": boolean }
-  tipOverrides: lsGet("wt_exercise_tip_overrides", {}), // { "exId" or "exId:sub": { tip, breath } }
+  tipOverrides: lsGet("wt_exercise_tip_overrides", {}), // { "exId" or "exId:sub": { name, tip, breath } }
   tipEditOpen: {},
   substituted: lsGet("wt_substituted", {}), // { [exId]: true }
   profile: lsGet("wt_profile", null),
@@ -425,12 +425,12 @@ function getExDisplay(ex) {
     ? { ...ex, ...ex.substitutes[0] }
     : ex;
   const ov = state.tipOverrides[tipOverrideKey(ex)];
-  return ov ? { ...base, tip: ov.tip ?? base.tip, breath: ov.breath ?? base.breath } : base;
+  return ov ? { ...base, name: ov.name ?? base.name, tip: ov.tip ?? base.tip, breath: ov.breath ?? base.breath } : base;
 }
 
-function saveTipOverride(ex, tip, breath) {
+function saveTipOverride(ex, name, tip, breath) {
   const key = tipOverrideKey(ex);
-  state.tipOverrides = { ...state.tipOverrides, [key]: { tip, breath } };
+  state.tipOverrides = { ...state.tipOverrides, [key]: { name, tip, breath } };
   lsSet("wt_exercise_tip_overrides", state.tipOverrides);
 }
 
@@ -1005,6 +1005,8 @@ function exerciseCardHTML(ex, index) {
   const hasCustomTip = Object.prototype.hasOwnProperty.call(state.tipOverrides, tipKey);
   const tipHTML = isTipEditing
     ? `<div style="background:#14161A;border:1px solid #333944;border-radius:8px;padding:10px;margin-bottom:10px">
+        <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">🏷️ 운동 이름</div>
+        <input data-tipfield="${ex.id}|name" value="${escapeHTML(disp.name || "")}" style="width:100%;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;margin-bottom:8px">
         <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">💡 운동 팁</div>
         <textarea data-tipfield="${ex.id}|tip" style="width:100%;min-height:92px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.tip || "")}</textarea>
         <div style="font-size:12px;color:#8A93A3;margin:8px 0 5px">🫁 호흡</div>
@@ -1018,7 +1020,7 @@ function exerciseCardHTML(ex, index) {
     : `<div style="background:#14161A;border:1px solid #262B34;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:14px;color:#B8BFC9;line-height:1.5">
         ${disp.tip ? `💡 ${escapeHTML(disp.tip)}` : "💡 팁 없음"}
         ${disp.breath ? `<div style="margin-top:6px;color:#8FBFA8">🫁 호흡: ${escapeHTML(disp.breath)}</div>` : ""}
-        ${!isActive ? `<button data-edittip="${ex.id}" style="margin-top:8px;background:none;border:1px solid #333944;border-radius:6px;padding:5px 9px;color:#B8BFC9;font-size:12px;cursor:pointer">✏️ 팁 수정${hasCustomTip ? " · 사용자 설정" : ""}</button>` : ""}
+        ${!isActive ? `<button data-edittip="${ex.id}" style="margin-top:8px;background:none;border:1px solid #333944;border-radius:6px;padding:5px 9px;color:#B8BFC9;font-size:12px;cursor:pointer">✏️ 운동 정보 수정${hasCustomTip ? " · 사용자 설정" : ""}</button>` : ""}
       </div>`;
 
   const subBtnHTML =
@@ -1448,6 +1450,7 @@ function handleSetTimerFinish(t) {
       state.returnListTarget = null;
       state.selectedExerciseId = null;
       state.selectedCardioKey = null;
+      normalizeHistoryToWorkoutList();
     } else if (t.restSec > 0) {
       announceRest(t.restSec);
       state.timer = { kind: "setRest", exId: t.exId, setIdx: t.setIdx, nextSetIdx: t.nextSetIdx, isLastSet: t.nextSetIdx === null, remaining: t.restSec, total: t.restSec };
@@ -1494,6 +1497,7 @@ function finishActiveTimer() {
       state.returnListTarget = null;
       state.selectedExerciseId = null;
       state.selectedCardioKey = null;
+      normalizeHistoryToWorkoutList();
       speak("오늘 유산소를 완료했습니다. 수고하셨습니다.");
     }
   } else {
@@ -1616,6 +1620,16 @@ function startElapsedClock() {
     const el = document.getElementById("elapsedDisplay");
     if (el) el.textContent = formatTime(Math.floor((Date.now() - state.sessionStart) / 1000));
   }, 1000);
+}
+
+// Keep browser history aligned with the visible workout list.
+// When a detail workout ends (or the user explicitly returns), the current
+// history entry must become the list instead of leaving completed exercises
+// behind in the Android Back-button stack.
+function normalizeHistoryToWorkoutList() {
+  try {
+    history.replaceState({ view: "day", date: state.selectedDate, subview: "list" }, "", "");
+  } catch (e) {}
 }
 
 // ---------- Event handling ----------
@@ -1743,14 +1757,10 @@ function attachHandlers() {
   const backToExerciseList = document.getElementById("backToExerciseList");
   if (backToExerciseList) backToExerciseList.onclick = () => {
     state.pendingListScroll = state.returnListTarget;
-    const hs = history.state || {};
-    if (hs.view === "day" && (hs.subview === "exercise" || hs.subview === "cardio")) {
-      history.back();
-      return;
-    }
     state.returnListTarget = null;
     state.selectedExerciseId = null;
     state.selectedCardioKey = null;
+    normalizeHistoryToWorkoutList();
     render();
   };
 
@@ -1851,9 +1861,11 @@ function attachHandlers() {
       const dayType = getDayType(state.selectedDate);
       const ex = EXERCISES[dayType].find((e) => e.id === exId);
       if (!ex) return;
+      const nameEl = document.querySelector(`[data-tipfield="${exId}|name"]`);
       const tipEl = document.querySelector(`[data-tipfield="${exId}|tip"]`);
       const breathEl = document.querySelector(`[data-tipfield="${exId}|breath"]`);
-      saveTipOverride(ex, tipEl ? tipEl.value.trim() : "", breathEl ? breathEl.value.trim() : "");
+      const base = state.substituted[ex.id] && ex.substitutes && ex.substitutes[0] ? { ...ex, ...ex.substitutes[0] } : ex;
+      saveTipOverride(ex, nameEl && nameEl.value.trim() ? nameEl.value.trim() : base.name, tipEl ? tipEl.value.trim() : "", breathEl ? breathEl.value.trim() : "");
       state.tipEditOpen = { ...state.tipEditOpen, [tipOverrideKey(ex)]: false };
       render();
     };
@@ -1962,9 +1974,23 @@ function attachHandlers() {
 
 // ---------- Browser back-button navigation ----------
 window.addEventListener("popstate", (e) => {
+  const wasDetail = !!(state.selectedExerciseId || state.selectedCardioKey);
   const hs = e.state || {};
   clearInterval(state.timerHandle);
   state.timer = null;
+
+  if (wasDetail) {
+    // Android/browser Back from any unfinished exercise/cardio detail always
+    // returns directly to today's workout list, never to an older exercise.
+    state.view = "day";
+    state.selectedExerciseId = null;
+    state.selectedCardioKey = null;
+    if (state.returnListTarget) state.pendingListScroll = state.returnListTarget;
+    state.returnListTarget = null;
+    normalizeHistoryToWorkoutList();
+    render();
+    return;
+  }
 
   if (hs.view === "day" && hs.date) {
     state.selectedDate = hs.date;

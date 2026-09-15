@@ -1,0 +1,6 @@
+NeoWorkOut v29
+- Android/browser Back-button history fix
+- Completing an exercise/cardio normalizes current history entry to workout list
+- Back from an unfinished exercise/cardio always returns directly to workout list
+- Completed Program 1/2 no longer remain in the Back-button stack
+- Preserves existing localStorage settings and editable exercise name/tips

@@ -114,6 +114,17 @@ const EXERCISES = {
   rest: [],
 };
 
+// v30: 유산소 날에도 전신 웨이트의 근력 운동을 선택해서 추가할 수 있습니다.
+// 코어는 유산소 날 전용 항목이 이미 있으므로 중복 추가하지 않습니다.
+const CARDIO_OPTIONAL_WEIGHT_IDS = [
+  "bench", "dips", "incline", "flye", "cablerow", "assisted_chinup", "latpull",
+  "legpress", "rdl", "bulgarian", "calfraise", "ohp", "lateral", "reardelt",
+  "triceps_pushdown", "triceps_overhead", "bicep", "dumbbell_bicep"
+];
+EXERCISES.lower.push(
+  ...EXERCISES.upper.filter((ex) => CARDIO_OPTIONAL_WEIGHT_IDS.includes(ex.id))
+);
+
 const CARDIO_OPTIONS = {
   upper: [],
   lower: [
@@ -284,9 +295,30 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "bulgarian", "calfraise", "latpu
   lsSet(VERSION_KEY, VERSION);
 })();
 
+// v30: 기존 유산소 날 설정은 그대로 보존하면서 새 웨이트 선택 항목과 순서만 뒤에 추가합니다.
+(function migrateCardioOptionalWeightsV30() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 30;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+  const natural = EXERCISES.lower.map((e) => e.id);
+  const oldOrder = Array.isArray(state.order.lower) ? state.order.lower.filter((id) => natural.includes(id)) : [];
+  const missing = natural.filter((id) => !oldOrder.includes(id));
+  state.order = { ...state.order, lower: [...oldOrder, ...missing] };
+  const lowerSel = { ...(state.selection.lower || {}) };
+  CARDIO_OPTIONAL_WEIGHT_IDS.forEach((id) => {
+    if (!Object.prototype.hasOwnProperty.call(lowerSel, id)) lowerSel[id] = false;
+  });
+  state.selection = { ...state.selection, lower: lowerSel };
+  lsSet("wt_exercise_order", state.order);
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
 function isSelected(dayType, exId) {
   const stored = state.selection[dayType];
   if (stored && Object.prototype.hasOwnProperty.call(stored, exId)) return stored[exId];
+  // 유산소 날에 추가된 웨이트 항목은 기본 OFF. 사용자가 원하는 날/항목만 켭니다.
+  if (dayType === "lower" && CARDIO_OPTIONAL_WEIGHT_IDS.includes(exId)) return false;
   return !DEFAULT_UNSELECTED.includes(exId);
 }
 
@@ -1143,10 +1175,10 @@ function dayHTML() {
   const progressHTML = dayType === "upper"
     ? `<div style="margin-top:14px;height:6px;background:#262B34;border-radius:3px;overflow:hidden"><div style="width:${totalSets ? (doneSets / totalSets) * 100 : 0}%;height:100%;background:#4CAF7D;transition:width .3s"></div></div><div style="font-size:12px;color:#8A93A3;margin-top:6px">${doneSets} / ${totalSets} 세트 완료</div>`
     : dayType === "lower"
-      ? `<div style="margin-top:14px;font-size:12px;color:#8A93A3">코어 ${coreDoneSets}/${totalSets} 세트 · 유산소 ${state.completed.cardio ? '<span style="color:#4CAF7D">✓ 완료</span>' : '미완료'}</div>`
+      ? `<div style="margin-top:14px;font-size:12px;color:#8A93A3">선택운동 ${coreDoneSets}/${totalSets} 세트 · 유산소 ${state.completed.cardio ? '<span style="color:#4CAF7D">✓ 완료</span>' : '미완료'}</div>`
       : `<div style="margin-top:14px;font-size:12px;color:#8A93A3">회복일 · 운동 기록 없음</div>`;
 
-  const selectionHTML = dayType === "upper" ? `
+  const selectionHTML = (dayType === "upper" || dayType === "lower") ? `
     <div class="card">
       <div data-toggleselection style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer">
         <div style="font-size:14px;font-weight:700">운동 선택</div>
@@ -1224,11 +1256,11 @@ function dayHTML() {
   const cardioDayOverviewHTML = dayType === "lower" ? `<div class="card" style="overflow:hidden">
     <div style="padding:12px 14px;border-bottom:1px solid #262B34;display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:15px;font-weight:700">오늘 운동 목록</div>
-      <div style="font-size:12px;color:#8A93A3">6개 중 선택</div>
+      <div style="font-size:12px;color:#8A93A3">웨이트·코어·유산소 선택</div>
     </div>
     ${exercises.map((ex, i) => {
-      const cfg = getConfig(ex); const effSets = getEffectiveSets(ex, cfg); const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length; const done = doneCount === effSets.length;
-      return `<button data-openexercise="${ex.id}" data-listtarget="exercise:${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${ex.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
+      const cfg = getConfig(ex); const disp = getExDisplay(ex); const effSets = getEffectiveSets(ex, cfg); const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length; const done = doneCount === effSets.length;
+      return `<button data-openexercise="${ex.id}" data-listtarget="exercise:${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${disp.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
     }).join('')}
     ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" data-listtarget="cardio:${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${opt.label}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">컨디션에 따라 선택 · 탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
   </div>` : "";

@@ -7,9 +7,9 @@ if ("serviceWorker" in navigator) {
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
-// 새 루틴: 월·수·금 전신 웨이트 / 화·목·토 유산소 / 일 완전 휴식
+// 새 루틴: 월·목 전신 웨이트 / 화·금 유산소 / 수·토·일 완전 휴식
 // 기존 내부 키(upper/lower/rest)는 저장 데이터 호환성을 위해 유지합니다.
-const DAY_TYPE = { 월: "upper", 화: "lower", 수: "upper", 목: "lower", 금: "upper", 토: "lower", 일: "rest" };
+const DAY_TYPE = { 월: "upper", 화: "lower", 수: "rest", 목: "upper", 금: "lower", 토: "rest", 일: "rest" };
 
 const DAY_INFO = {
   upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
@@ -49,10 +49,19 @@ const EXERCISES = {
     { id: "legpress", name: "레그프레스", unit: "kg", tip: "발을 발판 중앙에 어깨너비 정도로 두고 무릎과 발끝 방향을 맞춥니다. 무릎을 완전히 잠그지 않고 허리가 뜨지 않는 깊이까지만 내려갑니다.", breath: "밀어낼 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"맨몸 스쿼트",unit:"bodyweight",tip:"무릎과 발끝 방향을 맞추고 엉덩이를 뒤로 보내며 앉았다 일어서세요.",breath:"일어설 때 내쉬고, 앉을 때 들이쉬세요",sets:[{value:null,reps:20,rest:60},{value:null,reps:20,rest:60},{value:null,reps:15,rest:60}]}], sets: [
       { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }
     ] },
-    { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝 굽히고 엉덩이를 뒤로 보내며 덤벨을 정강이 가까이 내립니다. 햄스트링이 충분히 늘어나면 엉덩이 힘으로 일어섭니다. 등이 말리지 않게 합니다.", breath: "일어설 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+    { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝 굽힌 상태로 고정하고 엉덩이를 뒤로 최대한 밀며 덤벨을 다리에 가깝게 내려갑니다. 허리는 중립을 유지하고 햄스트링이 충분히 늘어나는 지점까지만 내려간 뒤, 엉덩이를 앞으로 밀며 둔근을 수축해 일어섭니다.", breath: "내려갈 때 들이쉬며 복압을 잡고, 일어설 때 내쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }
     ] },
+    { id: "legextension", name: "레그 익스텐션", unit: "kg", tip: "등과 엉덩이를 패드에 붙이고 무릎 축을 기구 회전축에 맞춥니다. 반동 없이 무릎을 펴 허벅지 앞쪽을 수축하고, 무릎을 세게 잠그지 않은 채 천천히 내려옵니다.", breath: "다리를 펼 때 내쉬고, 천천히 굽힐 때 들이쉬세요", substitutes: [], sets: [
+      { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }
+    ] },
+    { id: "legcurl", name: "레그 컬", unit: "kg", tip: "무릎 관절의 위치를 기구 회전축에 맞추고 골반과 상체를 패드에 고정합니다. 발뒤꿈치를 엉덩이 쪽으로 당기며 햄스트링을 수축하고, 돌아올 때 반동 없이 천천히 버팁니다.", breath: "다리를 굽힐 때 내쉬고, 천천히 펼 때 들이쉬세요", substitutes: [], sets: [
+      { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }
+    ] },
     // 선택 하체: 기본 OFF, 필요할 때 운동 선택에서 켜기
+    { id: "squat", name: "바벨 스쿼트", unit: "kg", tip: "발을 어깨너비 정도로 두고 발끝과 무릎 방향을 맞춥니다. 가슴과 허리의 중립을 유지하며 엉덩이와 무릎을 함께 굽혀 내려가고, 발바닥 전체로 바닥을 밀며 일어섭니다. 무릎이 안쪽으로 모이지 않게 합니다.", breath: "내려가기 전 숨을 들이마셔 복압을 잡고, 일어서며 내쉬세요", substitutes: [{name:"맨몸 스쿼트",unit:"bodyweight",tip:"무릎과 발끝 방향을 맞추고 발바닥 전체로 지지하며 앉았다 일어서세요.",breath:"앉을 때 들이쉬고, 일어설 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+      { value: 20, reps: 12, rest: 90 }, { value: 20, reps: 12, rest: 90 }, { value: 20, reps: 12, rest: 90 }
+    ] },
     { id: "bulgarian", name: "불가리안 스쿼트 (다리당)", unit: "bodyweight", tip: "뒷발을 벤치에 걸고 앞발에 체중을 실어 천천히 내려갔다 일어서세요. 무릎과 발끝 방향을 맞추고 균형이 흔들리지 않는 범위에서 수행합니다.", breath: "일어설 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{name:"제자리 런지",unit:"bodyweight",tip:"한 발을 앞에 두고 제자리에서 천천히 내려갔다 일어서세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: null, reps: 10, rest: 60 }, { value: null, reps: 10, rest: 60 }, { value: null, reps: 10, rest: 60 }
     ] },
@@ -118,7 +127,7 @@ const EXERCISES = {
 // 코어는 유산소 날 전용 항목이 이미 있으므로 중복 추가하지 않습니다.
 const CARDIO_OPTIONAL_WEIGHT_IDS = [
   "bench", "dips", "incline", "flye", "cablerow", "assisted_chinup", "latpull",
-  "legpress", "rdl", "bulgarian", "calfraise", "ohp", "lateral", "reardelt",
+  "legpress", "rdl", "legextension", "legcurl", "squat", "bulgarian", "calfraise", "ohp", "lateral", "reardelt",
   "triceps_pushdown", "triceps_overhead", "bicep", "dumbbell_bicep"
 ];
 EXERCISES.lower.push(
@@ -239,7 +248,7 @@ const state = {
   order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
 };
 
-const DEFAULT_UNSELECTED = ["flye", "woodchop", "bulgarian", "calfraise", "latpull", "dumbbell_bicep"];
+const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep"];
 
 // v16 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
 // 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
@@ -311,6 +320,49 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "bulgarian", "calfraise", "latpu
   state.selection = { ...state.selection, lower: lowerSel };
   lsSet("wt_exercise_order", state.order);
   lsSet("wt_exercise_selection", state.selection);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
+// v31: 하체 선택 운동 확장 + 새 주간 일정 적용. 기존 중량/횟수 설정은 보존합니다.
+(function migrateLowerBodyV31() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 31;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+
+  const newIds = ["legextension", "legcurl", "squat"];
+  const byId = Object.fromEntries(EXERCISES.upper.map((ex) => [ex.id, ex]));
+  const migratedConfigs = { ...state.configs };
+  newIds.forEach((id) => {
+    const ex = byId[id];
+    if (ex && !migratedConfigs[id]) {
+      migratedConfigs[id] = { workSec: ex.defaultWorkSec || DEFAULT_WORK_SECONDS, sets: ex.sets.map((set) => ({ ...set })) };
+    }
+  });
+  state.configs = migratedConfigs;
+
+  const upperSel = { ...(state.selection.upper || {}) };
+  // 사용자가 요청한 현재 하체 4종은 ON, 나머지 하체 선택 운동은 OFF.
+  ["legpress", "rdl", "legextension", "legcurl"].forEach((id) => { upperSel[id] = true; });
+  ["squat", "bulgarian", "calfraise"].forEach((id) => { upperSel[id] = false; });
+  state.selection = { ...state.selection, upper: upperSel };
+
+  const naturalUpper = EXERCISES.upper.map((e) => e.id);
+  const oldUpperOrder = Array.isArray(state.order.upper) ? state.order.upper.filter((id) => naturalUpper.includes(id)) : [];
+  const missingUpper = naturalUpper.filter((id) => !oldUpperOrder.includes(id));
+  state.order = { ...state.order, upper: [...oldUpperOrder, ...missingUpper] };
+
+  // 유산소 날의 선택 가능 웨이트 목록에도 새 하체 운동을 추가하되 기본 OFF 유지.
+  const lowerSel = { ...(state.selection.lower || {}) };
+  newIds.forEach((id) => { if (!Object.prototype.hasOwnProperty.call(lowerSel, id)) lowerSel[id] = false; });
+  state.selection = { ...state.selection, lower: lowerSel };
+  const naturalLower = EXERCISES.lower.map((e) => e.id);
+  const oldLowerOrder = Array.isArray(state.order.lower) ? state.order.lower.filter((id) => naturalLower.includes(id)) : [];
+  const missingLower = naturalLower.filter((id) => !oldLowerOrder.includes(id));
+  state.order = { ...state.order, lower: [...oldLowerOrder, ...missingLower] };
+
+  lsSet("wt_exercise_configs", state.configs);
+  lsSet("wt_exercise_selection", state.selection);
+  lsSet("wt_exercise_order", state.order);
   lsSet(VERSION_KEY, VERSION);
 })();
 
@@ -1160,11 +1212,28 @@ function exerciseOverviewHTML(exercises) {
   </div>`;
 }
 
+// v32: 실제로 선택된 운동 구성에 따라 데이 이름을 자동 표시합니다.
+function getDynamicDayLabel(dayType, exercises) {
+  if (dayType === "rest") return "완전 휴식";
+
+  const cardioCoreIds = new Set(["hangingraise_cardio", "cablecrunch_cardio", "plank_cardio"]);
+  const upperCoreIds = new Set(["hangingraise", "cablecrunch", "woodchop", "plank"]);
+  const hasCardio = (CARDIO_OPTIONS[dayType] || []).length > 0;
+  const hasCore = exercises.some((ex) => cardioCoreIds.has(ex.id) || upperCoreIds.has(ex.id));
+  const hasWeight = exercises.some((ex) => !cardioCoreIds.has(ex.id) && !upperCoreIds.has(ex.id));
+
+  const parts = [];
+  if (hasWeight) parts.push("웨이트");
+  if (hasCore) parts.push("코어");
+  if (hasCardio) parts.push("유산소");
+  return parts.length ? `${parts.join(" + ")} 데이` : "휴식";
+}
+
 function dayHTML() {
   const dayType = getDayType(state.selectedDate);
   const allExercises = getOrderedExercises(dayType);
   const exercises = allExercises.filter((ex) => isSelected(dayType, ex.id));
-  const info = DAY_INFO[dayType];
+  const info = { ...DAY_INFO[dayType], label: getDynamicDayLabel(dayType, exercises) };
   const totalSets = exercises.reduce((a, ex) => a + getConfig(ex).sets.length, 0);
   const doneSets = Object.values(state.completed).filter(Boolean).length;
   const dateObj = parseLocalDate(state.selectedDate);

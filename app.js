@@ -7,9 +7,9 @@ if ("serviceWorker" in navigator) {
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
-// 새 루틴: 월·목 전신 웨이트 / 화·금 유산소 / 수·토·일 완전 휴식
-// 기존 내부 키(upper/lower/rest)는 저장 데이터 호환성을 위해 유지합니다.
-const DAY_TYPE = { 월: "upper", 화: "lower", 수: "rest", 목: "upper", 금: "lower", 토: "rest", 일: "rest" };
+// v33: 매일 운동 가능. 월·목은 기존 웨이트 구성을 유지하고, 나머지 요일은 유산소형 화면에서 웨이트를 자유롭게 선택할 수 있습니다.
+// 기존 upper/lower 저장 키를 유지해 사용자 설정을 보존합니다.
+const DAY_TYPE = { 월: "upper", 화: "lower", 수: "lower", 목: "upper", 금: "lower", 토: "lower", 일: "lower" };
 
 const DAY_INFO = {
   upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
@@ -179,6 +179,9 @@ const CARDIO_OPTIONS = {
   ],
   rest: [],
 };
+
+// v33: 웨이트 데이에도 유산소를 선택할 수 있도록 동일한 유산소 옵션을 제공합니다.
+CARDIO_OPTIONS.upper = CARDIO_OPTIONS.lower;
 
 // ---------- Helpers ----------
 const pad = (n) => String(n).padStart(2, "0");
@@ -363,6 +366,15 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet("wt_exercise_configs", state.configs);
   lsSet("wt_exercise_selection", state.selection);
   lsSet("wt_exercise_order", state.order);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
+
+// v33: 모든 요일에서 웨이트/유산소 선택 가능. 기존 저장값은 변경하지 않습니다.
+(function migrateEverydayChoiceV33() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 33;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
   lsSet(VERSION_KEY, VERSION);
 })();
 
@@ -1212,7 +1224,7 @@ function exerciseOverviewHTML(exercises) {
   </div>`;
 }
 
-// v32: 실제로 선택된 운동 구성에 따라 데이 이름을 자동 표시합니다.
+// v33: 실제 선택 운동 + 사용 가능한 유산소 구성에 따라 데이 이름을 자동 표시합니다.
 function getDynamicDayLabel(dayType, exercises) {
   if (dayType === "rest") return "완전 휴식";
 
@@ -1322,7 +1334,7 @@ function dayHTML() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${durationInput}${inputs}</div>`;
   };
 
-  const cardioDayOverviewHTML = dayType === "lower" ? `<div class="card" style="overflow:hidden">
+  const cardioDayOverviewHTML = (dayType === "lower" || dayType === "upper") ? `<div class="card" style="overflow:hidden">
     <div style="padding:12px 14px;border-bottom:1px solid #262B34;display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:15px;font-weight:700">오늘 운동 목록</div>
       <div style="font-size:12px;color:#8A93A3">웨이트·코어·유산소 선택</div>

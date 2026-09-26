@@ -7,7 +7,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
-// v33: 매일 운동 가능. 월·목은 기존 웨이트 구성을 유지하고, 나머지 요일은 유산소형 화면에서 웨이트를 자유롭게 선택할 수 있습니다.
+// v34: 모든 요일의 오늘 운동 목록에서 웨이트와 유산소를 함께 표시하고 선택할 수 있습니다.
 // 기존 upper/lower 저장 키를 유지해 사용자 설정을 보존합니다.
 const DAY_TYPE = { 월: "upper", 화: "lower", 수: "lower", 목: "upper", 금: "lower", 토: "lower", 일: "lower" };
 
@@ -1410,10 +1410,10 @@ function dayHTML() {
       <div style="padding:0 16px;margin-bottom:10px">
         ${selectionHTML}
       </div>
-      ${dayType === "upper" && !selectedExercise ? `
+      ${dayType === "upper" && !selectedExercise && !state.selectedCardioKey ? `
         <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
-          ${exerciseOverviewHTML(exercises)}
-          ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"}">▶ 오늘 운동 전체 자동 진행</button>` : ""}
+          ${cardioDayOverviewHTML}
+          ${exercises.length > 0 ? `<button data-blockstart="all" ${blockRunning ? "disabled" : ""} style="width:100%;background:${blockRunning ? "#1E222A" : "#F5C518"};border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:${blockRunning ? "#8A93A3" : "#14161A"};cursor:${blockRunning ? "default" : "pointer"}">▶ 웨이트 전체 자동 진행</button>` : ""}
         </div>` : ''}
       ${(dayType === "upper" || dayType === "lower") && selectedExercise ? `
         <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
@@ -1421,7 +1421,7 @@ function dayHTML() {
           ${exerciseCardHTML(selectedExercise, exercises.indexOf(selectedExercise))}
         </div>` : ''}
       ${dayType === "lower" && !selectedExercise && !state.selectedCardioKey ? `<div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">${cardioDayOverviewHTML}</div>` : ''}
-      ${dayType === "lower" && state.selectedCardioKey ? `<div style="padding:0 16px;display:flex;flex-direction:column;gap:10px"><button id="backToExerciseList" style="background:#1E222A;border:1px solid #333944;border-radius:9px;padding:10px 12px;color:#ECEEF2;font-size:14px;text-align:left;cursor:pointer">‹ 오늘 운동 목록으로</button>${cardioHTML}</div>` : ''}
+      ${(dayType === "upper" || dayType === "lower") && state.selectedCardioKey ? `<div style="padding:0 16px;display:flex;flex-direction:column;gap:10px"><button id="backToExerciseList" style="background:#1E222A;border:1px solid #333944;border-radius:9px;padding:10px 12px;color:#ECEEF2;font-size:14px;text-align:left;cursor:pointer">‹ 오늘 운동 목록으로</button>${cardioHTML}</div>` : ''}
       <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
         ${dayType === "rest" ? cardioHTML : ''}
         <button id="resetDay" style="margin-top:6px;margin-bottom:20px;background:transparent;border:1px solid #333944;color:#8A93A3;border-radius:8px;padding:10px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">↺ 이 날짜 기록 초기화</button>

@@ -7,7 +7,7 @@ if ("serviceWorker" in navigator) {
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
-// v34: 모든 요일의 오늘 운동 목록에서 웨이트와 유산소를 함께 표시하고 선택할 수 있습니다.
+// v36: 모든 요일의 운동 선택 메뉴에서 웨이트·코어와 유산소 항목을 함께 ON/OFF 선택할 수 있습니다.
 // 기존 upper/lower 저장 키를 유지해 사용자 설정을 보존합니다.
 const DAY_TYPE = { 월: "upper", 화: "lower", 수: "lower", 목: "upper", 금: "lower", 토: "lower", 일: "lower" };
 
@@ -230,6 +230,7 @@ const state = {
   selection: lsGet("wt_exercise_selection", {}), // { [dayType]: { [exId]: boolean } }
   selectionOpen: false,
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
+  cardioSelection: lsGet("wt_cardio_selection", {}), // { [dayType]: { [optionKey]: boolean } }
   cardioConfig: lsGet("wt_cardio_config", {}), // { "dayType:optionKey:phaseKey": { field: value } }
   cardioEditOpen: {}, // { "dayType:optionKey": boolean }
   tipOverrides: lsGet("wt_exercise_tip_overrides", {}), // { "exId" or "exId:sub": { name, tip, breath } }
@@ -422,6 +423,26 @@ function moveExercise(dayType, exId, dir) {
   const updated = { ...state.order, [dayType]: next };
   state.order = updated;
   lsSet("wt_exercise_order", updated);
+  render();
+}
+
+function isCardioSelected(dayType, optionKey) {
+  const stored = state.cardioSelection[dayType];
+  if (stored && stored[optionKey] !== undefined) return !!stored[optionKey];
+  return true; // 기존 사용자: 유산소 선택 항목을 처음에는 모두 보이게 유지
+}
+
+function toggleCardioSelection(dayType, optionKey) {
+  const next = {
+    ...state.cardioSelection,
+    [dayType]: { ...(state.cardioSelection[dayType] || {}), [optionKey]: !isCardioSelected(dayType, optionKey) }
+  };
+  state.cardioSelection = next;
+  lsSet("wt_cardio_selection", next);
+  const selected = (CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key));
+  if (selected.length && !selected.some((o) => o.key === getCardioChoice(dayType))) {
+    setCardioChoiceFor(dayType, selected[0].key);
+  }
   render();
 }
 
@@ -1230,7 +1251,7 @@ function getDynamicDayLabel(dayType, exercises) {
 
   const cardioCoreIds = new Set(["hangingraise_cardio", "cablecrunch_cardio", "plank_cardio"]);
   const upperCoreIds = new Set(["hangingraise", "cablecrunch", "woodchop", "plank"]);
-  const hasCardio = (CARDIO_OPTIONS[dayType] || []).length > 0;
+  const hasCardio = (CARDIO_OPTIONS[dayType] || []).some((o) => isCardioSelected(dayType, o.key));
   const hasCore = exercises.some((ex) => cardioCoreIds.has(ex.id) || upperCoreIds.has(ex.id));
   const hasWeight = exercises.some((ex) => !cardioCoreIds.has(ex.id) && !upperCoreIds.has(ex.id));
 
@@ -1264,7 +1285,7 @@ function dayHTML() {
       <div data-toggleselection style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer">
         <div style="font-size:14px;font-weight:700">운동 선택</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:12px;color:#8A93A3">${exercises.length}/${allExercises.length}개 선택됨</span>
+          <span style="font-size:12px;color:#8A93A3">웨이트·코어 ${exercises.length}/${allExercises.length} · 유산소 ${(CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key)).length}/${(CARDIO_OPTIONS[dayType] || []).length}</span>
           <span style="color:#8A93A3">${state.selectionOpen ? "⌃" : "⌄"}</span>
         </div>
       </div>
@@ -1289,12 +1310,14 @@ function dayHTML() {
                     </div>`;
                 })
                 .join("")}
+              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin-top:6px;padding-top:10px;border-top:1px solid #3A3F49;font-size:12px;font-weight:700;color:#3E8FB0">유산소 운동</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 0"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${opt.label}</div></label>`; }).join("")}` : ""}
             </div>`
           : ""
       }
     </div>` : "";
 
-  const cardioOptions = CARDIO_OPTIONS[dayType] || [];
+  const allCardioOptions = CARDIO_OPTIONS[dayType] || [];
+  const cardioOptions = allCardioOptions.filter((o) => isCardioSelected(dayType, o.key));
   const cardioChoiceKey = cardioOptions.length ? getCardioChoice(dayType) : null;
   const activeCardioOption = cardioOptions.length ? (cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0]) : null;
   const cardioPhases = activeCardioOption ? activeCardioOption.phases : [];
@@ -1905,6 +1928,14 @@ function attachHandlers() {
       const exId = el.getAttribute("data-toggleselex");
       const dayType = getDayType(state.selectedDate);
       toggleSelection(dayType, exId);
+    };
+  });
+
+  document.querySelectorAll("[data-togglecardiosel]").forEach((el) => {
+    el.onclick = () => {
+      const optionKey = el.getAttribute("data-togglecardiosel");
+      const dayType = getDayType(state.selectedDate);
+      toggleCardioSelection(dayType, optionKey);
     };
   });
 

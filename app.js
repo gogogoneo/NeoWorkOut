@@ -9,7 +9,7 @@ if ("serviceWorker" in navigator) {
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
 // v37: 운동 선택 상단에 유산소 선택을 명확히 표시하고 캐시 갱신 문제를 수정했습니다.
 // 기존 upper/lower 저장 키를 유지해 사용자 설정을 보존합니다.
-const DAY_TYPE = { 월: "upper", 화: "lower", 수: "lower", 목: "upper", 금: "lower", 토: "lower", 일: "lower" };
+const DAY_TYPE = { 월: "upper", 화: "lower", 수: "upper", 목: "lower", 금: "upper", 토: "lower", 일: "rest" };
 
 const DAY_INFO = {
   upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
@@ -388,6 +388,45 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet(VERSION_KEY, VERSION);
 })();
 
+// v39: 월~토 설정을 요일별로 완전히 독립 저장. 일요일은 휴식.
+(function migratePerWeekdayV39() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 39;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+  const days = ["월","화","수","목","금","토"];
+  const typeFor = { 월:"upper", 화:"lower", 수:"upper", 목:"lower", 금:"upper", 토:"lower" };
+  const newSel = { ...state.selection };
+  const newOrder = { ...state.order };
+  const newCardioSel = { ...state.cardioSelection };
+  const newChoice = { ...state.cardioChoice };
+  const newCfg = { ...state.configs };
+  const newCardioCfg = { ...state.cardioConfig };
+  days.forEach((day) => {
+    const type = typeFor[day];
+    if (!newSel[day]) newSel[day] = { ...(state.selection[type] || {}) };
+    if (!newOrder[day]) newOrder[day] = [ ...(state.order[type] || EXERCISES[type].map(e=>e.id)) ];
+    if (!newCardioSel[day]) newCardioSel[day] = { ...(state.cardioSelection[type] || {}) };
+    const oldChoice = state.cardioChoice[`${type}:${day}`] || state.cardioChoice[type];
+    if (!newChoice[day] && oldChoice) newChoice[day] = oldChoice;
+    EXERCISES[type].forEach((ex) => {
+      [ex.id, `${ex.id}:sub`].forEach((base) => {
+        if (!newCfg[`${day}:${base}`] && state.configs[base]) newCfg[`${day}:${base}`] = JSON.parse(JSON.stringify(state.configs[base]));
+      });
+    });
+    (CARDIO_OPTIONS[type] || []).forEach((opt) => (opt.phases || []).forEach((ph) => {
+      const oldKey = `${type}:${opt.key}:${ph.key}`;
+      const newKey = `${day}:${opt.key}:${ph.key}`;
+      if (!newCardioCfg[newKey] && state.cardioConfig[oldKey]) newCardioCfg[newKey] = { ...state.cardioConfig[oldKey] };
+    }));
+  });
+  state.selection = newSel; state.order = newOrder; state.cardioSelection = newCardioSel;
+  state.cardioChoice = newChoice; state.configs = newCfg; state.cardioConfig = newCardioCfg;
+  lsSet("wt_exercise_selection", newSel); lsSet("wt_exercise_order", newOrder);
+  lsSet("wt_cardio_selection", newCardioSel); lsSet("wt_cardio_choice", newChoice);
+  lsSet("wt_exercise_configs", newCfg); lsSet("wt_cardio_config", newCardioCfg);
+  lsSet(VERSION_KEY, VERSION);
+})();
+
 // v33: 모든 요일에서 웨이트/유산소 선택 가능. 기존 저장값은 변경하지 않습니다.
 (function migrateEverydayChoiceV33() {
   const VERSION_KEY = "wt_program_version";
@@ -396,8 +435,10 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet(VERSION_KEY, VERSION);
 })();
 
+function weekdayKey() { return getDayLabel(state.selectedDate); }
+
 function isSelected(dayType, exId) {
-  const stored = state.selection[dayType];
+  const stored = state.selection[weekdayKey()];
   if (stored && Object.prototype.hasOwnProperty.call(stored, exId)) return stored[exId];
   // 유산소 날에 추가된 웨이트 항목은 기본 OFF. 사용자가 원하는 날/항목만 켭니다.
   if (dayType === "lower" && CARDIO_OPTIONAL_WEIGHT_IDS.includes(exId)) return false;
@@ -405,7 +446,8 @@ function isSelected(dayType, exId) {
 }
 
 function toggleSelection(dayType, exId) {
-  const next = { ...state.selection, [dayType]: { ...(state.selection[dayType] || {}), [exId]: !isSelected(dayType, exId) } };
+  const wk = weekdayKey();
+  const next = { ...state.selection, [wk]: { ...(state.selection[wk] || {}), [exId]: !isSelected(dayType, exId) } };
   state.selection = next;
   lsSet("wt_exercise_selection", next);
   render();
@@ -413,7 +455,7 @@ function toggleSelection(dayType, exId) {
 
 function getOrder(dayType) {
   const natural = EXERCISES[dayType].map((e) => e.id);
-  const stored = state.order[dayType];
+  const stored = state.order[weekdayKey()];
   if (!stored) return natural;
   const known = stored.filter((id) => natural.includes(id));
   const missing = natural.filter((id) => !known.includes(id));
@@ -437,14 +479,15 @@ function moveExercise(dayType, exId, dir) {
   if (idx === -1 || swapIdx < 0 || swapIdx >= cur.length) return;
   const next = [...cur];
   [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
-  const updated = { ...state.order, [dayType]: next };
+  const wk = weekdayKey();
+  const updated = { ...state.order, [wk]: next };
   state.order = updated;
   lsSet("wt_exercise_order", updated);
   render();
 }
 
 function isCardioSelected(dayType, optionKey) {
-  const stored = state.cardioSelection[dayType];
+  const stored = state.cardioSelection[weekdayKey()];
   if (stored && stored[optionKey] !== undefined) return !!stored[optionKey];
   return true; // 기존 사용자: 유산소 선택 항목을 처음에는 모두 보이게 유지
 }
@@ -452,7 +495,7 @@ function isCardioSelected(dayType, optionKey) {
 function toggleCardioSelection(dayType, optionKey) {
   const next = {
     ...state.cardioSelection,
-    [dayType]: { ...(state.cardioSelection[dayType] || {}), [optionKey]: !isCardioSelected(dayType, optionKey) }
+    [weekdayKey()]: { ...(state.cardioSelection[weekdayKey()] || {}), [optionKey]: !isCardioSelected(dayType, optionKey) }
   };
   state.cardioSelection = next;
   lsSet("wt_cardio_selection", next);
@@ -464,7 +507,7 @@ function toggleCardioSelection(dayType, optionKey) {
 }
 
 function cardioChoiceStorageKey(dayType) {
-  return dayType === "lower" ? `${dayType}:${getDayLabel(state.selectedDate)}` : dayType;
+  return weekdayKey();
 }
 
 function getCardioChoice(dayType) {
@@ -486,7 +529,7 @@ function setCardioChoiceFor(dayType, key) {
 }
 
 function cardioFieldKey(dayType, optionKey, phaseKey) {
-  return `${dayType}:${optionKey}:${phaseKey}`;
+  return `${weekdayKey()}:${optionKey}:${phaseKey}`;
 }
 
 function getCardioFields(dayType, optionKey, phase) {
@@ -655,7 +698,8 @@ function applyProfile(p) {
 
 // ---------- Exercise config helpers ----------
 function configKey(ex) {
-  return state.substituted[ex.id] ? `${ex.id}:sub` : ex.id;
+  const base = state.substituted[ex.id] ? `${ex.id}:sub` : ex.id;
+  return `${weekdayKey()}:${base}`;
 }
 
 function getDefaultConfig(ex) {

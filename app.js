@@ -1,13 +1,13 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=37", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
 // ---------- Data ----------
 const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
-// v36: 모든 요일의 운동 선택 메뉴에서 웨이트·코어와 유산소 항목을 함께 ON/OFF 선택할 수 있습니다.
+// v37: 운동 선택 상단에 유산소 선택을 명확히 표시하고 캐시 갱신 문제를 수정했습니다.
 // 기존 upper/lower 저장 키를 유지해 사용자 설정을 보존합니다.
 const DAY_TYPE = { 월: "upper", 화: "lower", 수: "lower", 목: "upper", 금: "lower", 토: "lower", 일: "lower" };
 
@@ -1292,6 +1292,7 @@ function dayHTML() {
       ${
         state.selectionOpen
           ? `<div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
+              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${opt.label}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
               ${allExercises
                 .map((ex, idx) => {
                   const checked = isSelected(dayType, ex.id);
@@ -1310,7 +1311,6 @@ function dayHTML() {
                     </div>`;
                 })
                 .join("")}
-              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin-top:6px;padding-top:10px;border-top:1px solid #3A3F49;font-size:12px;font-weight:700;color:#3E8FB0">유산소 운동</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 0"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${opt.label}</div></label>`; }).join("")}` : ""}
             </div>`
           : ""
       }

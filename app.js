@@ -138,6 +138,15 @@ const CARDIO_OPTIONS = {
   upper: [],
   lower: [
     {
+      key: "treadmill40",
+      label: "웨이트 후 트레드밀 40분 (빠른 걷기)",
+      type: "treadmill",
+      phases: [
+        { key: "main", label: "경사 빠른 걷기 인터벌", seconds: 39 * 60, fields: { highIncline: 7, highSpeed: 6, highSeconds: 2 * 60, lowIncline: 4, lowSpeed: 6, lowSeconds: 1 * 60, reps: 13 } },
+        { key: "finish", label: "마무리 걷기", seconds: 1 * 60, fields: { incline: 2, speed: 5.5 } },
+      ],
+    },
+    {
       key: "treadmill",
       label: "트레드밀 60분",
       type: "treadmill",
@@ -370,6 +379,14 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet(VERSION_KEY, VERSION);
 })();
 
+
+// v38: 웨이트 후 40분 빠른 걷기 트레드밀 옵션 추가. 기존 저장값은 변경하지 않습니다.
+(function migrateTreadmill40V38() {
+  const VERSION_KEY = "wt_program_version";
+  const VERSION = 38;
+  if (lsGet(VERSION_KEY, 0) >= VERSION) return;
+  lsSet(VERSION_KEY, VERSION);
+})();
 
 // v33: 모든 요일에서 웨이트/유산소 선택 가능. 기존 저장값은 변경하지 않습니다.
 (function migrateEverydayChoiceV33() {

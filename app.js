@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=37", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=40", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -12,21 +12,21 @@ const WEEKDAY_MAP = ["일", "월", "화", "수", "목", "금", "토"];
 const DAY_TYPE = { 월: "upper", 화: "lower", 수: "upper", 목: "lower", 금: "upper", 토: "lower", 일: "rest" };
 
 const DAY_INFO = {
-  upper: { label: "전신 웨이트", duration: 90, calories: 520, color: "#F5C518" },
-  lower: { label: "코어 + 유산소", duration: 70, calories: 500, color: "#3E8FB0" },
+  upper: { label: "A 프로그램", duration: 0, calories: 0, color: "#F5C518" },
+  lower: { label: "B 프로그램", duration: 0, calories: 0, color: "#3E8FB0" },
   rest: { label: "완전 휴식", duration: 0, calories: 0, color: "#545C6B" },
 };
 
 const EXERCISES = {
   upper: [
     // 가슴: 우선순위 높음, 각 3세트
-    { id: "bench", name: "바벨 벤치프레스", unit: "kg", tip: "견갑을 뒤로 모아 고정하고 가슴을 살짝 들어 바를 가슴 쪽으로 천천히 내렸다가 밀어올리세요. 팔꿈치는 몸통에서 약 45도, 손목은 바 아래에 둡니다.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "푸시업", unit: "bodyweight", tip: "몸을 일직선으로 유지하고 가슴이 바닥에 가까워질 때까지 내려갔다 밀어올리세요.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", sets: [{ value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}] }], sets: [
+    { id: "bench", name: "벤치프레스", unit: "kg", tip: "견갑을 뒤로 모아 고정하고 가슴을 살짝 들어 바를 가슴 쪽으로 천천히 내렸다가 밀어올리세요. 팔꿈치는 몸통에서 약 45도, 손목은 바 아래에 둡니다.", breath: "밀어올릴 때 숨을 내쉬고, 내릴 때 들이쉬세요", substitutes: [{ name: "푸시업", unit: "bodyweight", tip: "몸을 일직선으로 유지하고 가슴이 바닥에 가까워질 때까지 내려갔다 밀어올리세요.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", sets: [{ value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}] }], sets: [
       { value: 50, reps: 12, rest: 90 }, { value: 60, reps: 10, rest: 90 }, { value: 65, reps: 6, rest: 120 }
     ] },
     { id: "dips", name: "어시스트 머신 딥스", unit: "kg", tip: "가슴 자극을 위해 상체를 약간 앞으로 기울이고, 어깨가 과하게 내려가지 않는 범위에서 내려갔다 밀어올리세요. 어시스트 숫자가 클수록 쉬워집니다.", breath: "밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요", substitutes: [{ name:"벤치 딥스",unit:"bodyweight",tip:"어깨가 불편하지 않은 범위에서 천천히 수행하세요.",breath:"밀어올릴 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 40, reps: 12, rest: 90 }, { value: 35, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }
     ] },
-    { id: "incline", name: "인클라인 덤벨프레스", unit: "kg", tip: "벤치를 약 30도로 세우고 덤벨을 가슴 윗부분 옆으로 천천히 내렸다가 위로 밀어올리세요. 어깨가 들리지 않게 견갑을 고정하고 가슴 상부 수축에 집중합니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"인클라인 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 몸을 일직선으로 유지하며 가슴을 벤치 쪽으로 내렸다가 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+    { id: "incline", name: "인클라인 프레스", unit: "kg", tip: "벤치를 약 30도로 세우고 덤벨을 가슴 윗부분 옆으로 천천히 내렸다가 위로 밀어올리세요. 어깨가 들리지 않게 견갑을 고정하고 가슴 상부 수축에 집중합니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"인클라인 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 몸을 일직선으로 유지하며 가슴을 벤치 쪽으로 내렸다가 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 10, reps: 12, rest: 90 }, { value: 12, reps: 12, rest: 90 }, { value: 12, reps: 10, rest: 90 }
     ] },
     { id: "flye", name: "덤벨 플라이", unit: "kg", tip: "평벤치에 누워 팔꿈치를 살짝 굽힌 채 고정하고 양팔을 큰 아치로 벌렸다가 가슴 앞에서 모으세요. 무게보다 가슴의 스트레칭과 수축을 우선합니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"와이드 푸시업",unit:"bodyweight",tip:"손 간격을 어깨보다 넓게 잡고 가슴이 충분히 늘어나는 범위까지 천천히 내려갔다 밀어올리세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
@@ -37,7 +37,7 @@ const EXERCISES = {
     { id: "cablerow", name: "시티드 케이블 로우", unit: "kg", tip: "허리를 세우고 손잡이를 배꼽 방향으로 당기며 견갑을 뒤로 모으세요. 상체 반동을 최소화합니다.", breath: "당길 때 내쉬고, 돌아갈 때 들이쉬세요", substitutes: [{name:"밴드 로우",unit:"bodyweight",tip:"밴드를 고정하고 팔꿈치를 뒤로 보내며 견갑을 모으세요.",breath:"당길 때 내쉬고, 풀 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:12,rest:60}]}], sets: [
       { value: 30, reps: 12, rest: 90 }, { value: 35, reps: 10, rest: 90 }, { value: 40, reps: 8, rest: 90 }
     ] },
-    { id: "assisted_chinup", name: "어시스티드 친업", unit: "kg", tip: "손바닥이 몸을 향하도록 바를 잡고 가슴을 살짝 들어 올린 상태에서 팔꿈치를 아래·뒤로 끌어내리며 몸을 당기세요. 보조 중량은 8~12회를 반동 없이 수행할 수 있게 맞추고, 내려갈 때 팔을 충분히 펴 광배근이 늘어나는 느낌을 유지합니다.", breath: "몸을 당겨 올릴 때 내쉬고, 천천히 내려갈 때 들이쉬세요", substitutes: [], sets: [
+    { id: "assisted_chinup", name: "어시스티드 풀업", unit: "kg", tip: "오버그립으로 어깨너비보다 살짝 넓게 잡고 먼저 어깨를 아래로 눌러 견갑을 안정시킵니다. 가슴을 살짝 들고 팔꿈치를 아래로 끌어내린다는 느낌으로 몸을 당기세요. 보조 중량은 8~12회를 반동 없이 수행할 수 있게 맞추고, 내려갈 때 팔을 충분히 펴 광배근이 늘어나는 느낌을 유지합니다.", breath: "몸을 당겨 올릴 때 내쉬고, 천천히 내려갈 때 들이쉬세요", substitutes: [], sets: [
       { value: 30, reps: 12, rest: 90 }, { value: 30, reps: 10, rest: 90 }, { value: 30, reps: 8, rest: 90 }
     ] },
     // 기존 랫풀다운은 교체 후에도 선택 운동으로 보존 (기본 OFF)
@@ -49,7 +49,7 @@ const EXERCISES = {
     { id: "legpress", name: "레그프레스", unit: "kg", tip: "발을 발판 중앙에 어깨너비 정도로 두고 무릎과 발끝 방향을 맞춥니다. 무릎을 완전히 잠그지 않고 허리가 뜨지 않는 깊이까지만 내려갑니다.", breath: "밀어낼 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"맨몸 스쿼트",unit:"bodyweight",tip:"무릎과 발끝 방향을 맞추고 엉덩이를 뒤로 보내며 앉았다 일어서세요.",breath:"일어설 때 내쉬고, 앉을 때 들이쉬세요",sets:[{value:null,reps:20,rest:60},{value:null,reps:20,rest:60},{value:null,reps:15,rest:60}]}], sets: [
       { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }
     ] },
-    { id: "rdl", name: "덤벨 루마니안 데드리프트", unit: "kg", tip: "무릎은 살짝 굽힌 상태로 고정하고 엉덩이를 뒤로 최대한 밀며 덤벨을 다리에 가깝게 내려갑니다. 허리는 중립을 유지하고 햄스트링이 충분히 늘어나는 지점까지만 내려간 뒤, 엉덩이를 앞으로 밀며 둔근을 수축해 일어섭니다.", breath: "내려갈 때 들이쉬며 복압을 잡고, 일어설 때 내쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+    { id: "rdl", name: "RDL", unit: "kg", tip: "무릎은 살짝 굽힌 상태로 고정하고 엉덩이를 뒤로 최대한 밀며 덤벨을 다리에 가깝게 내려갑니다. 허리는 중립을 유지하고 햄스트링이 충분히 늘어나는 지점까지만 내려간 뒤, 엉덩이를 앞으로 밀며 둔근을 수축해 일어섭니다.", breath: "내려갈 때 들이쉬며 복압을 잡고, 일어설 때 내쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }
     ] },
     { id: "legextension", name: "레그 익스텐션", unit: "kg", tip: "등과 엉덩이를 패드에 붙이고 무릎 축을 기구 회전축에 맞춥니다. 반동 없이 무릎을 펴 허벅지 앞쪽을 수축하고, 무릎을 세게 잠그지 않은 채 천천히 내려옵니다.", breath: "다리를 펼 때 내쉬고, 천천히 굽힐 때 들이쉬세요", substitutes: [], sets: [
@@ -70,10 +70,10 @@ const EXERCISES = {
     ] },
 
     // 어깨·팔: 모든 운동 3세트
-    { id: "ohp", name: "덤벨 오버헤드프레스", unit: "kg", tip: "코어에 힘을 주고 허리가 과하게 젖혀지지 않도록 합니다. 덤벨을 귀 옆에서 머리 위로 밀어올립니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"파이크 푸시업",unit:"bodyweight",tip:"엉덩이를 높인 역V 자세에서 머리를 바닥 쪽으로 내렸다 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+    { id: "ohp", name: "OHP", unit: "kg", tip: "코어에 힘을 주고 허리가 과하게 젖혀지지 않도록 합니다. 덤벨을 귀 옆에서 머리 위로 밀어올립니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"파이크 푸시업",unit:"bodyweight",tip:"엉덩이를 높인 역V 자세에서 머리를 바닥 쪽으로 내렸다 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 8, reps: 12, rest: 60 }, { value: 8, reps: 10, rest: 60 }, { value: 8, reps: 10, rest: 60 }
     ] },
-    { id: "lateral", name: "레터럴 레이즈", unit: "kg", tip: "팔꿈치를 살짝 굽히고 팔꿈치가 먼저 올라간다는 느낌으로 어깨 높이 정도까지 들어올립니다. 반동을 최소화합니다.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 레터럴 레이즈",unit:"bodyweight",tip:"밴드를 밟고 같은 궤적으로 천천히 들어올리세요.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
+    { id: "lateral", name: "사레레", unit: "kg", tip: "팔꿈치를 살짝 굽히고 팔꿈치가 먼저 올라간다는 느낌으로 어깨 높이 정도까지 들어올립니다. 반동을 최소화합니다.", breath: "올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"밴드 레터럴 레이즈",unit:"bodyweight",tip:"밴드를 밟고 같은 궤적으로 천천히 들어올리세요.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
       { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
     ] },
     { id: "reardelt", name: "리어 델트 플라이", unit: "kg", tip: "상체를 숙이고 몸통을 고정한 뒤 팔을 옆으로 벌립니다. 반동보다 후면 어깨 수축에 집중합니다.", breath: "벌릴 때 내쉬고, 모을 때 들이쉬세요", substitutes: [{name:"맨몸 리어델트 레이즈",unit:"bodyweight",tip:"상체를 숙인 뒤 무게 없이 팔을 벌리며 후면 어깨를 수축하세요.",breath:"벌릴 때 내쉬고, 모을 때 들이쉬세요",sets:[{value:null,reps:15,rest:45},{value:null,reps:15,rest:45}]}], sets: [
@@ -240,7 +240,8 @@ const state = {
   selectionOpen: false,
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
   cardioSelection: lsGet("wt_cardio_selection", {}), // { [dayType]: { [optionKey]: boolean } }
-  cardioConfig: lsGet("wt_cardio_config", {}), // { "dayType:optionKey:phaseKey": { field: value } }
+  cardioConfig: lsGet("wt_cardio_config", {}), // weekday-scoped cardio fields
+  cardioNames: lsGet("wt_cardio_names", {}), // { "요일:optionKey": custom name }
   cardioEditOpen: {}, // { "dayType:optionKey": boolean }
   tipOverrides: lsGet("wt_exercise_tip_overrides", {}), // { "exId" or "exId:sub": { name, tip, breath } }
   tipEditOpen: {},
@@ -427,6 +428,19 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet(VERSION_KEY, VERSION);
 })();
 
+// v40: 현재 A/B 구성, 3세트 코어, 요일별 독립값을 초기화/보정합니다.
+(function migrateProgramV40(){
+  const K="wt_program_version", V=40; if(lsGet(K,0)>=V)return;
+  const A=["bench","incline","cablerow","legpress","legcurl","lateral","reardelt","hangingraise","cablecrunch","plank"];
+  const B=["dips","assisted_chinup","rdl","legextension","ohp","triceps_pushdown","bicep","hangingraise_cardio","cablecrunch_cardio","plank_cardio"];
+  const map={월:A,수:A,금:A,화:B,목:B,토:B};
+  Object.entries(map).forEach(([day,on])=>{ const dt=DAY_TYPE[day], natural=EXERCISES[dt].map(e=>e.id); state.selection[day]={}; state.cardioSelection[day]={}; (CARDIO_OPTIONS[dt]||[]).forEach(o=>state.cardioSelection[day][o.key]=(o.key==="treadmill40")); natural.forEach(id=>state.selection[day][id]=on.includes(id)); state.order[day]=[...on,...natural.filter(id=>!on.includes(id))]; on.forEach(id=>{ const ex=EXERCISES[dt].find(e=>e.id===id); if(!ex)return; const cfg=getDefaultConfig(ex); cfg.sets=cfg.sets.slice(0,3); while(cfg.sets.length<3)cfg.sets.push({...cfg.sets[cfg.sets.length-1]}); state.configs[`${day}:${id}`]=cfg; }); });
+  // A: 중강도 30분 기본, B: 7/4 인터벌 40분 기본
+  ["월","수","금"].forEach(day=>{state.cardioChoice[day]="treadmill40"; state.cardioConfig[`${day}:treadmill40:main`]={durationMin:29,highIncline:4,highSpeed:6,lowIncline:4,lowSpeed:6}; state.cardioConfig[`${day}:treadmill40:finish`]={durationMin:1,incline:4,speed:6}; state.cardioNames[`${day}:treadmill40`]="중강도 걷기 30분";});
+  ["화","목","토"].forEach(day=>{state.cardioChoice[day]="treadmill40"; state.cardioNames[`${day}:treadmill40`]="7/4 경사 인터벌 40분";});
+  lsSet("wt_exercise_selection",state.selection);lsSet("wt_cardio_selection",state.cardioSelection);lsSet("wt_exercise_order",state.order);lsSet("wt_exercise_configs",state.configs);lsSet("wt_cardio_choice",state.cardioChoice);lsSet("wt_cardio_config",state.cardioConfig);lsSet("wt_cardio_names",state.cardioNames);lsSet(K,V);
+})();
+
 // v33: 모든 요일에서 웨이트/유산소 선택 가능. 기존 저장값은 변경하지 않습니다.
 (function migrateEverydayChoiceV33() {
   const VERSION_KEY = "wt_program_version";
@@ -561,6 +575,60 @@ function updateCardioField(dayType, optionKey, phaseKey, fieldName, rawValue) {
   state.cardioConfig = next;
   lsSet("wt_cardio_config", next);
   render();
+}
+
+function cardioNameKey(optionKey) { return `${weekdayKey()}:${optionKey}`; }
+function getCardioName(opt) { return state.cardioNames[cardioNameKey(opt.key)] || opt.label; }
+function saveCardioName(optionKey, name) {
+  const key = cardioNameKey(optionKey);
+  const next = { ...state.cardioNames };
+  if (String(name || "").trim()) next[key] = String(name).trim(); else delete next[key];
+  state.cardioNames = next; lsSet("wt_cardio_names", next); render();
+}
+
+function estimateWorkout(dayType, exercises, cardioOpt) {
+  const weight = Number((state.profile && state.profile.weight) || state.profileForm.weight || 70) || 70;
+  let strengthSec = 0;
+  exercises.forEach((ex) => {
+    const cfg = getConfig(ex); const sets = getEffectiveSets(ex, cfg);
+    sets.forEach((st, i) => { strengthSec += Number(cfg.workSec || DEFAULT_WORK_SECONDS); if (i < sets.length - 1) strengthSec += Number(st.rest || 0); });
+    strengthSec += 45; // 기구 이동/세팅 여유
+  });
+  let cardioSec = 0, cardioKcal = 0;
+  if (cardioOpt) {
+    cardioOpt.phases.forEach((ph) => {
+      const sec = getCardioDurationSeconds(dayType, cardioOpt.key, ph); cardioSec += sec;
+      const f = getCardioFields(dayType, cardioOpt.key, ph); const typ = ph.type || cardioOpt.type;
+      let met = typ === "stairs" ? 8.0 : typ === "bike" ? 6.5 : 5.5;
+      if (typ === "treadmill") {
+        const speed = Number(f.speed ?? f.highSpeed ?? 6); const incline = Number(f.incline ?? ((Number(f.highIncline||0)+Number(f.lowIncline||0))/2) ?? 0);
+        const mmin = speed * 1000 / 60; const vo2 = 0.1*mmin + 1.8*mmin*(incline/100) + 3.5; met = Math.max(2, vo2/3.5);
+      }
+      cardioKcal += met * 3.5 * weight / 200 * (sec/60);
+    });
+  }
+  const strengthKcal = 5.0 * 3.5 * weight / 200 * (strengthSec/60);
+  return { minutes: Math.max(0, Math.round((strengthSec + cardioSec)/60)), calories: Math.max(0, Math.round(strengthKcal + cardioKcal)) };
+}
+
+function copyWeekdaySettings(sourceDay, targets) {
+  const srcType = DAY_TYPE[sourceDay];
+  targets.forEach((day) => {
+    if (!DAY_TYPE[day] || day === "일") return;
+    state.selection[day] = JSON.parse(JSON.stringify(state.selection[sourceDay] || {}));
+    state.order[day] = JSON.parse(JSON.stringify(state.order[sourceDay] || []));
+    state.cardioSelection[day] = JSON.parse(JSON.stringify(state.cardioSelection[sourceDay] || {}));
+    if (state.cardioChoice[sourceDay]) state.cardioChoice[day] = state.cardioChoice[sourceDay];
+    Object.keys(state.configs).filter(k=>k.startsWith(sourceDay+":" )).forEach(k=>{ state.configs[day+k.slice(sourceDay.length)] = JSON.parse(JSON.stringify(state.configs[k])); });
+    Object.keys(state.cardioConfig).filter(k=>k.startsWith(sourceDay+":" )).forEach(k=>{ state.cardioConfig[day+k.slice(sourceDay.length)] = JSON.parse(JSON.stringify(state.cardioConfig[k])); });
+    Object.keys(state.cardioNames).filter(k=>k.startsWith(sourceDay+":" )).forEach(k=>{ state.cardioNames[day+k.slice(sourceDay.length)] = state.cardioNames[k]; });
+  });
+  lsSet("wt_exercise_selection",state.selection); lsSet("wt_exercise_order",state.order); lsSet("wt_cardio_selection",state.cardioSelection); lsSet("wt_cardio_choice",state.cardioChoice); lsSet("wt_exercise_configs",state.configs); lsSet("wt_cardio_config",state.cardioConfig); lsSet("wt_cardio_names",state.cardioNames);
+}
+
+function setExerciseOrder(dayType, ids) {
+  const natural = EXERCISES[dayType].map(e=>e.id); const cleaned = ids.filter(id=>natural.includes(id));
+  const next=[...cleaned,...natural.filter(id=>!cleaned.includes(id))]; state.order={...state.order,[weekdayKey()]:next}; lsSet("wt_exercise_order",state.order); render();
 }
 
 function buildCardioDetail(type, fields, isMain) {
@@ -1011,7 +1079,7 @@ function saveProgress() {
 
 function updateSummary(dateStr, isComplete) {
   if (isComplete) {
-    state.summary[dateStr] = { calories: DAY_INFO[getDayType(dateStr)].calories };
+    const dt=getDayType(dateStr); const exs=getOrderedExercises(dt).filter(ex=>isSelected(dt,ex.id)); const opts=(CARDIO_OPTIONS[dt]||[]).filter(o=>isCardioSelected(dt,o.key)); const opt=opts.find(o=>o.key===getCardioChoice(dt))||opts[0]||null; state.summary[dateStr] = { calories: estimateWorkout(dt,exs,opt).calories };
   } else {
     delete state.summary[dateStr];
   }
@@ -1184,11 +1252,11 @@ function exerciseCardHTML(ex, index) {
   const tipHTML = isTipEditing
     ? `<div style="background:#14161A;border:1px solid #333944;border-radius:8px;padding:10px;margin-bottom:10px">
         <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">🏷️ 운동 이름</div>
-        <input data-tipfield="${ex.id}|name" value="${escapeHTML(disp.name || "")}" style="width:100%;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;margin-bottom:8px">
+        <input data-tipfield="${ex.id}|name" enterkeyhint="next" value="${escapeHTML(disp.name || "")}" style="width:100%;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;margin-bottom:8px">
         <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">💡 운동 팁</div>
-        <textarea data-tipfield="${ex.id}|tip" style="width:100%;min-height:92px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.tip || "")}</textarea>
+        <textarea data-tipfield="${ex.id}|tip" enterkeyhint="next" style="width:100%;min-height:92px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.tip || "")}</textarea>
         <div style="font-size:12px;color:#8A93A3;margin:8px 0 5px">🫁 호흡</div>
-        <textarea data-tipfield="${ex.id}|breath" style="width:100%;min-height:58px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.breath || "")}</textarea>
+        <textarea data-tipfield="${ex.id}|breath" enterkeyhint="done" style="width:100%;min-height:58px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.breath || "")}</textarea>
         <div style="display:flex;gap:7px;margin-top:8px">
           <button data-savetip="${ex.id}" style="flex:1;background:#F5C518;border:none;border-radius:6px;padding:8px;font-weight:700;color:#14161A;cursor:pointer">저장</button>
           ${hasCustomTip ? `<button data-resettip="${ex.id}" style="background:#262B34;border:1px solid #333944;border-radius:6px;padding:8px 10px;color:#B8BFC9;cursor:pointer">기본값</button>` : ""}
@@ -1309,18 +1377,7 @@ function exerciseOverviewHTML(exercises) {
 // v33: 실제 선택 운동 + 사용 가능한 유산소 구성에 따라 데이 이름을 자동 표시합니다.
 function getDynamicDayLabel(dayType, exercises) {
   if (dayType === "rest") return "완전 휴식";
-
-  const cardioCoreIds = new Set(["hangingraise_cardio", "cablecrunch_cardio", "plank_cardio"]);
-  const upperCoreIds = new Set(["hangingraise", "cablecrunch", "woodchop", "plank"]);
-  const hasCardio = (CARDIO_OPTIONS[dayType] || []).some((o) => isCardioSelected(dayType, o.key));
-  const hasCore = exercises.some((ex) => cardioCoreIds.has(ex.id) || upperCoreIds.has(ex.id));
-  const hasWeight = exercises.some((ex) => !cardioCoreIds.has(ex.id) && !upperCoreIds.has(ex.id));
-
-  const parts = [];
-  if (hasWeight) parts.push("웨이트");
-  if (hasCore) parts.push("코어");
-  if (hasCardio) parts.push("유산소");
-  return parts.length ? `${parts.join(" + ")} 데이` : "휴식";
+  return dayType === "upper" ? "A 프로그램" : "B 프로그램";
 }
 
 function dayHTML() {
@@ -1342,9 +1399,9 @@ function dayHTML() {
       : `<div style="margin-top:14px;font-size:12px;color:#8A93A3">회복일 · 운동 기록 없음</div>`;
 
   const selectionHTML = (dayType === "upper" || dayType === "lower") ? `
-    <div class="card">
+    <div class="card" style="background:#1B2229;border:1px solid #3E8FB0">
       <div data-toggleselection style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer">
-        <div style="font-size:14px;font-weight:700">운동 선택</div>
+        <div style="font-size:14px;font-weight:800;color:#F5C518">운동 선택 · 순서 편집</div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:12px;color:#8A93A3">웨이트·코어 ${exercises.length}/${allExercises.length} · 유산소 ${(CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key)).length}/${(CARDIO_OPTIONS[dayType] || []).length}</span>
           <span style="color:#8A93A3">${state.selectionOpen ? "⌃" : "⌄"}</span>
@@ -1353,11 +1410,11 @@ function dayHTML() {
       ${
         state.selectionOpen
           ? `<div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
-              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${opt.label}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
+              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${getCardioName(opt)}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
               ${allExercises
                 .map((ex, idx) => {
                   const checked = isSelected(dayType, ex.id);
-                  return `<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #262B34">
+                  return `<div data-sortrow="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #262B34">
                       <label data-toggleselex="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;flex:1">
                         <div style="width:20px;height:20px;margin-top:1px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#4CAF7D" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div>
                         <div style="flex:1">
@@ -1365,13 +1422,18 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-                        <button data-moveex="${ex.id}|-1" ${idx === 0 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === 0 ? "#3A3F49" : "#8A93A3"};cursor:${idx === 0 ? "default" : "pointer"};font-size:12px">⌃</button>
-                        <button data-moveex="${ex.id}|1" ${idx === allExercises.length - 1 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === allExercises.length - 1 ? "#3A3F49" : "#8A93A3"};cursor:${idx === allExercises.length - 1 ? "default" : "pointer"};font-size:12px">⌄</button>
+                      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+                        <button data-draghandle="${ex.id}" aria-label="${ex.name} 순서 드래그" style="width:36px;height:44px;background:none;border:none;color:#8A93A3;touch-action:none;cursor:grab;font-size:22px">≡</button>
+                        <div style="display:flex;flex-direction:column"><button data-moveex="${ex.id}|-1" ${idx === 0 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === 0 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌃</button><button data-moveex="${ex.id}|1" ${idx === allExercises.length - 1 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === allExercises.length - 1 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌄</button></div>
                       </div>
                     </div>`;
                 })
                 .join("")}
+              <div style="margin-top:10px;padding-top:12px;border-top:1px solid #3A3F49">
+                <div style="font-size:13px;font-weight:800;margin-bottom:8px">요일 설정 복사</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">${["월","화","수","목","금","토"].filter(d=>d!==weekdayKey()).map(d=>`<label style="font-size:13px"><input type="checkbox" data-copytarget="${d}"> ${d}</label>`).join("")}</div>
+                <button data-copysettings style="margin-top:9px;background:#262B34;border:1px solid #545C6B;border-radius:8px;color:#ECEEF2;padding:9px 12px;font-weight:700">현재 ${weekdayKey()}요일 설정 복사</button>
+              </div>
             </div>`
           : ""
       }
@@ -1383,6 +1445,8 @@ function dayHTML() {
   const activeCardioOption = cardioOptions.length ? (cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0]) : null;
   const cardioPhases = activeCardioOption ? activeCardioOption.phases : [];
   const cardioType = activeCardioOption ? activeCardioOption.type : null;
+  const estimate = estimateWorkout(dayType, exercises, activeCardioOption);
+  info.duration = estimate.minutes; info.calories = estimate.calories;
   const cardioEditKey = `${dayType}:${cardioChoiceKey || "none"}`;
   const isCardioEditOpen = !!state.cardioEditOpen[cardioEditKey];
   const cardioFieldStyle = "width:64px;background:#14161A;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:5px 4px;font-family:ui-monospace,monospace;font-size:13px;text-align:center;display:block;margin-top:3px";
@@ -1392,7 +1456,7 @@ function dayHTML() {
           ${cardioOptions
             .map(
               (opt, i) =>
-                `<button data-cardiotab="${opt.key}" style="background:${opt.key === cardioChoiceKey ? "#F5C518" : "#262B34"};color:${opt.key === cardioChoiceKey ? "#14161A" : "#ECEEF2"};border:1px solid #333944;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer">${i + 1}순위 · ${opt.label}</button>`
+                `<button data-cardiotab="${opt.key}" style="background:${opt.key === cardioChoiceKey ? "#F5C518" : "#262B34"};color:${opt.key === cardioChoiceKey ? "#14161A" : "#ECEEF2"};border:1px solid #333944;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer">${i + 1}순위 · ${getCardioName(opt)}</button>`
             )
             .join("")}
         </div>`
@@ -1427,7 +1491,7 @@ function dayHTML() {
       const cfg = getConfig(ex); const disp = getExDisplay(ex); const effSets = getEffectiveSets(ex, cfg); const doneCount = effSets.filter((_, idx) => state.completed[`${ex.id}-${idx}`]).length; const done = doneCount === effSets.length;
       return `<button data-openexercise="${ex.id}" data-listtarget="exercise:${ex.id}" style="width:100%;background:transparent;border:none;border-bottom:1px solid #262B34;padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${done ? '#4CAF7D' : '#F5C518'};font-size:14px">${done ? '✓' : pad(i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${disp.name}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${buildSummary(ex)}</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`;
     }).join('')}
-    ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" data-listtarget="cardio:${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${opt.label}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">컨디션에 따라 선택 · 탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
+    ${cardioOptions.map((opt, i) => `<button data-opencardio="${opt.key}" data-listtarget="cardio:${opt.key}" style="width:100%;background:transparent;border:none;border-bottom:${i === cardioOptions.length - 1 ? 'none' : '1px solid #262B34'};padding:13px 14px;color:#ECEEF2;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer"><div class="mono" style="width:24px;color:${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '#4CAF7D' : '#3E8FB0'};font-size:14px">${state.completed.cardio && getCardioChoice(dayType) === opt.key ? '✓' : pad(exercises.length + i + 1)}</div><div style="flex:1"><div style="font-size:16px;font-weight:700">${getCardioName(opt)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">탭하면 상세 보기</div></div><span style="color:#8A93A3;font-size:18px">›</span></button>`).join('')}
   </div>` : "";
 
   const cardioHTML = activeCardioOption ? `
@@ -1438,6 +1502,7 @@ function dayHTML() {
         <button data-togglecardioedit="${cardioEditKey}" style="background:none;border:none;color:#8A93A3;font-size:13px;cursor:pointer">${isCardioEditOpen ? "완료" : "✏️ 수정"}</button>
       </div>
       ${cardioTabsHTML}
+      ${isCardioEditOpen ? `<label style="display:block;font-size:12px;color:#8A93A3;margin-bottom:8px">유산소 운동명<input data-cardioname="${cardioChoiceKey}" value="${escapeHTML(getCardioName(activeCardioOption))}" enterkeyhint="done" style="width:100%;box-sizing:border-box;margin-top:4px;background:#14161A;border:1px solid #333944;border-radius:7px;color:#ECEEF2;padding:9px;font-size:16px"></label>` : ""}
       <div style="display:flex;flex-direction:column;gap:8px">
         ${cardioPhases
           .map((p) => {
@@ -1458,7 +1523,7 @@ function dayHTML() {
           })
           .join("")}
       </div>
-      <button data-startcardio="all" style="width:100%;margin-top:12px;background:#3E8FB0;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:#14161A;cursor:pointer">▶ ${activeCardioOption.label} 전체 자동 진행</button>
+      <button data-startcardio="all" style="width:100%;margin-top:12px;background:#3E8FB0;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:#14161A;cursor:pointer">▶ ${getCardioName(activeCardioOption)} 전체 자동 진행</button>
       ${state.completed.cardio ? '<div style="margin-top:10px;color:#4CAF7D;font-size:13px;font-weight:700">✓ 오늘 유산소 완료</div>' : ''}
     </div>` : dayType === "rest" ? `
       <div class="card" style="padding:24px 18px;text-align:center">
@@ -1999,6 +2064,21 @@ function attachHandlers() {
       toggleCardioSelection(dayType, optionKey);
     };
   });
+
+  const copyBtn=document.querySelector("[data-copysettings]");
+  if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
+
+  // 모바일 Pointer Events 기반 드래그 정렬. ↑↓ 버튼은 접근성/보조 수단으로 유지.
+  document.querySelectorAll("[data-draghandle]").forEach((handle)=>{
+    handle.onpointerdown=(e)=>{ e.preventDefault(); const id=handle.getAttribute("data-draghandle"); const row=handle.closest("[data-sortrow]"); if(!row)return; handle.setPointerCapture?.(e.pointerId); handle.style.opacity=".55";
+      const onMove=(ev)=>{ const target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest?.("[data-sortrow]"); if(!target||target===row)return; const box=target.getBoundingClientRect(); target.parentNode.insertBefore(row, ev.clientY < box.top+box.height/2 ? target : target.nextSibling); };
+      const done=()=>{ handle.style.opacity="1"; const dt=getDayType(state.selectedDate); const ids=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow")); const natural=getOrder(dt); const merged=[...ids,...natural.filter(x=>!ids.includes(x))]; state.order={...state.order,[weekdayKey()]:merged}; lsSet("wt_exercise_order",state.order); handle.removeEventListener("pointermove",onMove); handle.removeEventListener("pointerup",done); handle.removeEventListener("pointercancel",done); render(); };
+      handle.addEventListener("pointermove",onMove); handle.addEventListener("pointerup",done); handle.addEventListener("pointercancel",done);
+    };
+  });
+
+  document.querySelectorAll("[data-tipfield]").forEach((el)=>{ el.addEventListener("keydown",(e)=>{ if(e.key!=="Enter")return; if(el.tagName==="TEXTAREA" && !e.ctrlKey) return; e.preventDefault(); const fields=[...document.querySelectorAll("[data-tipfield]")]; const i=fields.indexOf(el); if(i>=0&&i<fields.length-1) fields[i+1].focus(); else el.blur(); }); });
+  const cardioName=document.querySelector("[data-cardioname]"); if(cardioName){ cardioName.onchange=()=>saveCardioName(cardioName.getAttribute("data-cardioname"),cardioName.value); }
 
   document.querySelectorAll("[data-moveex]").forEach((el) => {
     el.onclick = () => {

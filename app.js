@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=40", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=41", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -1418,12 +1418,12 @@ function dayHTML() {
                       <label data-toggleselex="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;flex:1">
                         <div style="width:20px;height:20px;margin-top:1px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#4CAF7D" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div>
                         <div style="flex:1">
-                          <div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${ex.name}</div>
+                          <div style="font-size:14px;font-weight:600;color:${checked ? "#ECEEF2" : "#8A93A3"}">${getExDisplay(ex).name}</div>
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
                       <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-                        <button data-draghandle="${ex.id}" aria-label="${ex.name} 순서 드래그" style="width:36px;height:44px;background:none;border:none;color:#8A93A3;touch-action:none;cursor:grab;font-size:22px">≡</button>
+                        <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 드래그" style="width:36px;height:44px;background:none;border:none;color:#8A93A3;touch-action:none;cursor:grab;font-size:22px">≡</button>
                         <div style="display:flex;flex-direction:column"><button data-moveex="${ex.id}|-1" ${idx === 0 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === 0 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌃</button><button data-moveex="${ex.id}|1" ${idx === allExercises.length - 1 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === allExercises.length - 1 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌄</button></div>
                       </div>
                     </div>`;
@@ -2068,12 +2068,63 @@ function attachHandlers() {
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
 
-  // 모바일 Pointer Events 기반 드래그 정렬. ↑↓ 버튼은 접근성/보조 수단으로 유지.
+  // v41: 모바일에서도 확실히 동작하도록 document 단위 Pointer Events로 드래그 정렬.
+  // 드래그 중 손가락의 Y좌표와 각 행의 중앙점을 비교해 DOM 순서를 즉시 바꿉니다.
   document.querySelectorAll("[data-draghandle]").forEach((handle)=>{
-    handle.onpointerdown=(e)=>{ e.preventDefault(); const id=handle.getAttribute("data-draghandle"); const row=handle.closest("[data-sortrow]"); if(!row)return; handle.setPointerCapture?.(e.pointerId); handle.style.opacity=".55";
-      const onMove=(ev)=>{ const target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest?.("[data-sortrow]"); if(!target||target===row)return; const box=target.getBoundingClientRect(); target.parentNode.insertBefore(row, ev.clientY < box.top+box.height/2 ? target : target.nextSibling); };
-      const done=()=>{ handle.style.opacity="1"; const dt=getDayType(state.selectedDate); const ids=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow")); const natural=getOrder(dt); const merged=[...ids,...natural.filter(x=>!ids.includes(x))]; state.order={...state.order,[weekdayKey()]:merged}; lsSet("wt_exercise_order",state.order); handle.removeEventListener("pointermove",onMove); handle.removeEventListener("pointerup",done); handle.removeEventListener("pointercancel",done); render(); };
-      handle.addEventListener("pointermove",onMove); handle.addEventListener("pointerup",done); handle.addEventListener("pointercancel",done);
+    handle.onpointerdown=(e)=>{
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const row=handle.closest("[data-sortrow]");
+      if(!row) return;
+      const pointerId=e.pointerId;
+      let moved=false;
+      const startY=e.clientY;
+      handle.style.opacity=".55";
+      handle.style.cursor="grabbing";
+      row.style.background="#242C35";
+      row.style.borderRadius="8px";
+
+      const onMove=(ev)=>{
+        if(ev.pointerId!==pointerId) return;
+        ev.preventDefault();
+        if(Math.abs(ev.clientY-startY)>4) moved=true;
+        const rows=[...document.querySelectorAll("[data-sortrow]")].filter(r=>r!==row);
+        if(!rows.length) return;
+        let before=null;
+        for(const r of rows){
+          const b=r.getBoundingClientRect();
+          if(ev.clientY < b.top + b.height/2){ before=r; break; }
+        }
+        const parent=row.parentNode;
+        if(before) parent.insertBefore(row,before);
+        else {
+          const last=rows[rows.length-1];
+          if(last && last.parentNode===parent) parent.insertBefore(row,last.nextSibling);
+        }
+      };
+      const done=(ev)=>{
+        if(ev.pointerId!==pointerId) return;
+        document.removeEventListener("pointermove",onMove);
+        document.removeEventListener("pointerup",done);
+        document.removeEventListener("pointercancel",done);
+        handle.style.opacity="1";
+        handle.style.cursor="grab";
+        row.style.background="";
+        row.style.borderRadius="";
+        if(moved){
+          const dt=getDayType(state.selectedDate);
+          const ids=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow"));
+          const natural=getOrder(dt);
+          const merged=[...ids,...natural.filter(x=>!ids.includes(x))];
+          state.order={...state.order,[weekdayKey()]:merged};
+          lsSet("wt_exercise_order",state.order);
+        }
+        render();
+      };
+      document.addEventListener("pointermove",onMove,{passive:false});
+      document.addEventListener("pointerup",done);
+      document.addEventListener("pointercancel",done);
     };
   });
 

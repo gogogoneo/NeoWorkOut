@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=42", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=45", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -259,7 +259,8 @@ const state = {
     issues: [],
   }),
 
-  order: lsGet("wt_exercise_order", {}), // { [dayType]: [exId, exId, ...] }
+  order: lsGet("wt_exercise_order", {}), // { [weekday]: [exId, exId, ...] }
+  orderMoveSelected: null, // 순서 변경용 선택 항목(저장 불필요)
 };
 
 const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep"];
@@ -538,17 +539,21 @@ function getOrderedExercises(dayType) {
     .filter(Boolean);
 }
 
-function moveExercise(dayType, exId, dir) {
+function moveExercise(dayType, exId, amount) {
   const cur = getOrder(dayType);
   const idx = cur.indexOf(exId);
-  const swapIdx = idx + dir;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= cur.length) return;
+  if (idx === -1) return;
+  let target;
+  if (amount === "top") target = 0;
+  else if (amount === "bottom") target = cur.length - 1;
+  else target = Math.max(0, Math.min(cur.length - 1, idx + Number(amount || 0)));
+  if (target === idx) return;
   const next = [...cur];
-  [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+  next.splice(idx, 1);
+  next.splice(target, 0, exId);
   const wk = weekdayKey();
-  const updated = { ...state.order, [wk]: next };
-  state.order = updated;
-  lsSet("wt_exercise_order", updated);
+  state.order = { ...state.order, [wk]: next };
+  lsSet("wt_exercise_order", state.order);
   render();
 }
 
@@ -639,32 +644,34 @@ function saveCardioName(optionKey, name) {
 }
 
 function estimateWorkout(dayType, exercises, cardioOpt) {
-  // Dynamic estimate from the user's current weekday settings.
-  // Calories are estimates, not measurements. If no saved profile weight exists,
-  // keep the legacy 70 kg fallback so older installs continue to work.
+  // v45: 현재 요일의 실제 세트/반복수/휴식/유산소 설정을 요일별로 독립 계산한다.
+  // kcal은 프로필 체중 기반 추정치이며 측정값이 아니다.
   const weight = Number((state.profile && state.profile.weight) || state.profileForm.weight || 70) || 70;
   const kcalFromMet = (met, sec) => Math.max(0, Number(met) || 0) * 3.5 * weight / 200 * (Math.max(0, Number(sec) || 0) / 60);
 
-  let activeSec = 0, restSec = 0, transitionSec = 0;
+  let activeSec = 0, restSec = 0;
   exercises.forEach((ex) => {
     const cfg = getConfig(ex);
+    const disp = getExDisplay(ex);
     const sets = getEffectiveSets(ex, cfg);
     sets.forEach((st, i) => {
-      activeSec += Math.max(0, Number(cfg.workSec || DEFAULT_WORK_SECONDS));
+      // 반복 운동은 1회 약 3초(내림/올림 포함), 시간 운동은 설정 시간을 그대로 사용.
+      const setSec = disp.unit === "sec"
+        ? Math.max(1, Number(st.value || cfg.workSec || disp.defaultWorkSec || DEFAULT_WORK_SECONDS))
+        : Math.max(20, (Number(st.reps) || 10) * 3);
+      activeSec += setSec;
       if (i < sets.length - 1) restSec += Math.max(0, Number(st.rest || 0));
     });
-    if (sets.length) transitionSec += 45; // 기구 이동/세팅 예상시간
   });
+  // 첫 기구 준비 60초 + 운동 종목이 바뀔 때마다 평균 60초.
+  const transitionSec = exercises.length ? exercises.length * 60 : 0;
 
-  // Do not count all rest/setup time as vigorous lifting. Active sets use 5 MET,
-  // inter-set rest 1.8 MET, and equipment transitions 2.0 MET.
-  const strengthKcal = kcalFromMet(5.0, activeSec) + kcalFromMet(1.8, restSec) + kcalFromMet(2.0, transitionSec);
+  const strengthKcal = kcalFromMet(6.0, activeSec) + kcalFromMet(2.0, restSec) + kcalFromMet(2.0, transitionSec);
 
   const treadmillMet = (speedKmh, inclinePct) => {
     const speed = Math.max(0, Number(speedKmh) || 0);
     const grade = Math.max(0, Number(inclinePct) || 0) / 100;
     const mmin = speed * 1000 / 60;
-    // ACSM walking equation for walking speeds; running equation for faster running.
     const vo2 = speed <= 7.0
       ? 0.1 * mmin + 1.8 * mmin * grade + 3.5
       : 0.2 * mmin + 0.9 * mmin * grade + 3.5;
@@ -678,37 +685,26 @@ function estimateWorkout(dayType, exercises, cardioOpt) {
       cardioSec += sec;
       const f = getCardioFields(dayType, cardioOpt.key, ph);
       const typ = ph.type || cardioOpt.type;
-
       if (typ === "treadmill") {
-        // Interval phases are calculated from high/low settings in their actual time ratio.
-        const hiDur = Number(f.highSeconds);
-        const loDur = Number(f.lowSeconds);
+        const hiDur = Number(f.highSeconds), loDur = Number(f.lowSeconds);
         const hasInterval = Number.isFinite(hiDur) && hiDur > 0 && Number.isFinite(loDur) && loDur > 0 &&
           (f.highIncline != null || f.lowIncline != null || f.highSpeed != null || f.lowSpeed != null);
         if (hasInterval) {
           const cycle = hiDur + loDur;
-          const hiSec = sec * hiDur / cycle;
-          const loSec = sec - hiSec;
+          const hiSec = sec * hiDur / cycle, loSec = sec - hiSec;
           cardioKcal += kcalFromMet(treadmillMet(f.highSpeed ?? f.speed ?? 6, f.highIncline ?? f.incline ?? 0), hiSec);
           cardioKcal += kcalFromMet(treadmillMet(f.lowSpeed ?? f.speed ?? 6, f.lowIncline ?? f.incline ?? 0), loSec);
         } else {
           cardioKcal += kcalFromMet(treadmillMet(f.speed ?? 6, f.incline ?? 0), sec);
         }
-      } else if (typ === "stairs") {
-        cardioKcal += kcalFromMet(8.0, sec);
-      } else if (typ === "bike") {
-        cardioKcal += kcalFromMet(6.5, sec);
-      } else {
-        cardioKcal += kcalFromMet(5.0, sec);
-      }
+      } else if (typ === "stairs") cardioKcal += kcalFromMet(8.0, sec);
+      else if (typ === "bike") cardioKcal += kcalFromMet(6.5, sec);
+      else cardioKcal += kcalFromMet(5.0, sec);
     });
   }
 
   const totalSec = activeSec + restSec + transitionSec + cardioSec;
-  return {
-    minutes: Math.max(0, Math.round(totalSec / 60)),
-    calories: Math.max(0, Math.round(strengthKcal + cardioKcal))
-  };
+  return { minutes: Math.max(0, Math.round(totalSec / 60)), calories: Math.max(0, Math.round(strengthKcal + cardioKcal)) };
 }
 function copyWeekdaySettings(sourceDay, targets) {
   const srcType = DAY_TYPE[sourceDay];
@@ -1176,15 +1172,29 @@ function saveProgress() {
   lsSet(`wt_progress_${state.selectedDate}`, state.completed);
 }
 
-function updateSummary(dateStr, isComplete) {
-  if (isComplete) {
-    const dt=getDayType(dateStr); const exs=getOrderedExercises(dt).filter(ex=>isSelected(dt,ex.id)); const opts=(CARDIO_OPTIONS[dt]||[]).filter(o=>isCardioSelected(dt,o.key)); const opt=opts.find(o=>o.key===getCardioChoice(dt))||opts[0]||null; state.summary[dateStr] = { calories: estimateWorkout(dt,exs,opt).calories };
+function getCurrentDayCompletion() {
+  const dayType = getDayType(state.selectedDate);
+  if (dayType === "rest") return { complete: false, exercises: [], cardioOpt: null };
+  const exercises = getOrderedExercises(dayType).filter((ex) => isSelected(dayType, ex.id));
+  const allSetsDone = exercises.every((ex) => getEffectiveSets(ex, getConfig(ex)).every((_, idx) => !!state.completed[`${ex.id}-${idx}`]));
+  const cardioOptions = (CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key));
+  const cardioOpt = cardioOptions.find((o) => o.key === getCardioChoice(dayType)) || cardioOptions[0] || null;
+  const cardioDone = !cardioOpt || !!state.completed.cardio;
+  return { complete: exercises.length > 0 && allSetsDone && cardioDone, exercises, cardioOpt };
+}
+
+function updateSummary(dateStr) {
+  // 호출 시점은 항상 현재 선택 날짜. 웨이트와 선택 유산소가 모두 끝났을 때만 달력에 기록한다.
+  const status = getCurrentDayCompletion();
+  if (status.complete) {
+    const dt = getDayType(dateStr);
+    const est = estimateWorkout(dt, status.exercises, status.cardioOpt);
+    state.summary[dateStr] = { calories: est.calories, minutes: est.minutes };
   } else {
     delete state.summary[dateStr];
   }
   lsSet("wt_summary", state.summary);
 }
-
 // ---------- Render: root ----------
 function render() {
   const app = document.getElementById("app");
@@ -1224,7 +1234,7 @@ function calendarHTML() {
     return `<button class="calCell ${isToday ? "today" : ""}" data-date="${dateStr}">
         <span class="mono" style="font-size:13px">${d}</span>
         <div style="width:5px;height:5px;border-radius:50%;background:${DAY_INFO[dType].color}"></div>
-        ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D">${summary.calories}kcal</span>` : ""}
+        ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D;line-height:1.25;text-align:center">${summary.calories}kcal<br>${summary.minutes || "-"}분</span>` : ""}
       </button>`;
   }).join("");
 
@@ -1521,13 +1531,11 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-                        <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 드래그" style="width:36px;height:44px;background:none;border:none;color:#8A93A3;touch-action:none;cursor:grab;font-size:22px">≡</button>
-                        <div style="display:flex;flex-direction:column"><button data-moveex="${ex.id}|-1" ${idx === 0 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === 0 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌃</button><button data-moveex="${ex.id}|1" ${idx === allExercises.length - 1 ? "disabled" : ""} style="width:24px;height:20px;background:none;border:none;color:${idx === allExercises.length - 1 ? "#3A3F49" : "#8A93A3"};font-size:12px">⌄</button></div>
-                      </div>
+                      <button data-orderselect="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 변경 선택" style="width:34px;height:34px;flex-shrink:0;border:1px solid ${state.orderMoveSelected === ex.id ? "#F5C518" : "#545C6B"};border-radius:8px;background:${state.orderMoveSelected === ex.id ? "#F5C518" : "#1E222A"};color:${state.orderMoveSelected === ex.id ? "#14161A" : "#B8BFC9"};font-size:12px;font-weight:800">${state.orderMoveSelected === ex.id ? "선택" : "이동"}</button>
                     </div>`;
                 })
                 .join("")}
+              ${state.orderMoveSelected ? `<div style="position:sticky;bottom:8px;z-index:3;margin-top:10px;padding:10px;background:#1E222A;border:1px solid #545C6B;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25)"><div style="font-size:12px;color:#B8BFC9;margin-bottom:8px">선택한 운동 순서 이동</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><button data-moveselected="top">맨 위</button><button data-moveselected="-3">▲ 3칸</button><button data-moveselected="-1">▲ 1칸</button><button data-moveselected="1">▼ 1칸</button><button data-moveselected="3">▼ 3칸</button><button data-moveselected="bottom">맨 아래</button></div></div>` : ""}
               <div style="margin-top:10px;padding-top:12px;border-top:1px solid #3A3F49">
                 <div style="font-size:13px;font-weight:800;margin-bottom:8px">요일 설정 복사</div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">${["월","화","수","목","금","토"].filter(d=>d!==weekdayKey()).map(d=>`<label style="font-size:13px"><input type="checkbox" data-copytarget="${d}"> ${d}</label>`).join("")}</div>
@@ -1727,7 +1735,7 @@ function markSetComplete(exId, setIdx) {
   const dayType = getDayType(state.selectedDate);
   const totalSets = EXERCISES[dayType].filter((ex) => isSelected(dayType, ex.id)).reduce((a, ex) => a + getConfig(ex).sets.length, 0);
   const doneSets = Object.values(state.completed).filter(Boolean).length;
-  updateSummary(state.selectedDate, doneSets === totalSets);
+  updateSummary(state.selectedDate);
 }
 
 function updateTimerBarDOM() {
@@ -1852,7 +1860,7 @@ function finishActiveTimer() {
     } else {
       state.completed.cardio = true;
       saveProgress();
-      updateSummary(state.selectedDate, true);
+      updateSummary(state.selectedDate);
       state.timer = null;
       state.pendingListScroll = state.returnListTarget || `cardio:${t.optionKey}`;
       state.returnListTarget = null;
@@ -1960,7 +1968,7 @@ function resetExercise(ex) {
   const dayType = getDayType(state.selectedDate);
   const totalSets = EXERCISES[dayType].filter((e) => isSelected(dayType, e.id)).reduce((a, e) => a + getConfig(e).sets.length, 0);
   const doneSets = Object.values(state.completed).filter(Boolean).length;
-  updateSummary(state.selectedDate, doneSets === totalSets);
+  updateSummary(state.selectedDate);
   if (state.activeExerciseId === ex.id) {
     state.activeExerciseId = null;
     state.queue = null;
@@ -2167,67 +2175,26 @@ function attachHandlers() {
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
 
-  // v41: 모바일에서도 확실히 동작하도록 document 단위 Pointer Events로 드래그 정렬.
-  // 드래그 중 손가락의 Y좌표와 각 행의 중앙점을 비교해 DOM 순서를 즉시 바꿉니다.
-  document.querySelectorAll("[data-draghandle]").forEach((handle)=>{
-    handle.onpointerdown=(e)=>{
-      if (e.button !== undefined && e.button !== 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const row=handle.closest("[data-sortrow]");
-      if(!row) return;
-      const pointerId=e.pointerId;
-      let moved=false;
-      const startY=e.clientY;
-      handle.style.opacity=".55";
-      handle.style.cursor="grabbing";
-      row.style.background="#242C35";
-      row.style.borderRadius="8px";
-
-      const onMove=(ev)=>{
-        if(ev.pointerId!==pointerId) return;
-        ev.preventDefault();
-        if(Math.abs(ev.clientY-startY)>4) moved=true;
-        const rows=[...document.querySelectorAll("[data-sortrow]")].filter(r=>r!==row);
-        if(!rows.length) return;
-        let before=null;
-        for(const r of rows){
-          const b=r.getBoundingClientRect();
-          if(ev.clientY < b.top + b.height/2){ before=r; break; }
-        }
-        const parent=row.parentNode;
-        if(before) parent.insertBefore(row,before);
-        else {
-          const last=rows[rows.length-1];
-          if(last && last.parentNode===parent) parent.insertBefore(row,last.nextSibling);
-        }
-      };
-      const done=(ev)=>{
-        if(ev.pointerId!==pointerId) return;
-        document.removeEventListener("pointermove",onMove);
-        document.removeEventListener("pointerup",done);
-        document.removeEventListener("pointercancel",done);
-        handle.style.opacity="1";
-        handle.style.cursor="grab";
-        row.style.background="";
-        row.style.borderRadius="";
-        if(moved){
-          const dt=getDayType(state.selectedDate);
-          const ids=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow"));
-          const natural=getOrder(dt);
-          const merged=[...ids,...natural.filter(x=>!ids.includes(x))];
-          state.order={...state.order,[weekdayKey()]:merged};
-          lsSet("wt_exercise_order",state.order);
-        }
-        render();
-      };
-      document.addEventListener("pointermove",onMove,{passive:false});
-      document.addEventListener("pointerup",done);
-      document.addEventListener("pointercancel",done);
-    };
+  // v45: 드래그 정렬 제거. 모바일 스크롤과 충돌하지 않는 선택식 순서 이동.
+  document.querySelectorAll("[data-orderselect]").forEach((el)=>{
+    el.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); const id=el.getAttribute("data-orderselect"); state.orderMoveSelected = state.orderMoveSelected === id ? null : id; render(); };
+  });
+  document.querySelectorAll("[data-moveselected]").forEach((el)=>{
+    el.onclick=(e)=>{ e.preventDefault(); if(!state.orderMoveSelected) return; moveExercise(getDayType(state.selectedDate), state.orderMoveSelected, el.getAttribute("data-moveselected")); };
   });
 
-  document.querySelectorAll("[data-tipfield]").forEach((el)=>{ el.addEventListener("keydown",(e)=>{ if(e.key!=="Enter")return; if(el.tagName==="TEXTAREA" && !e.ctrlKey) return; e.preventDefault(); const fields=[...document.querySelectorAll("[data-tipfield]")]; const i=fields.indexOf(el); if(i>=0&&i<fields.length-1) fields[i+1].focus(); else el.blur(); }); });
+  // v45: 텍스트 편집창 Enter=다음, 마지막=완료. textarea 줄바꿈은 Shift+Enter.
+  document.querySelectorAll("[data-tipfield]").forEach((el)=>{
+    el.addEventListener("keydown",(e)=>{
+      if(e.key!=="Enter" || e.isComposing) return;
+      if(el.tagName==="TEXTAREA" && e.shiftKey) return;
+      e.preventDefault();
+      const fields=[...document.querySelectorAll("[data-tipfield]")].filter(x=>!x.disabled);
+      const i=fields.indexOf(el);
+      if(i>=0 && i<fields.length-1){ fields[i+1].focus({preventScroll:true}); fields[i+1].scrollIntoView({block:"center",behavior:"smooth"}); }
+      else { el.blur(); if(document.activeElement) document.activeElement.blur(); }
+    });
+  });
   const cardioName=document.querySelector("[data-cardioname]"); if(cardioName){ cardioName.onchange=()=>saveCardioName(cardioName.getAttribute("data-cardioname"),cardioName.value); }
 
   document.querySelectorAll("[data-moveex]").forEach((el) => {

@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=41", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=42", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -428,17 +428,69 @@ const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise
   lsSet(VERSION_KEY, VERSION);
 })();
 
-// v40: 현재 A/B 구성, 3세트 코어, 요일별 독립값을 초기화/보정합니다.
-(function migrateProgramV40(){
-  const K="wt_program_version", V=40; if(lsGet(K,0)>=V)return;
+// v42: v40의 강제 초기화 버그 복구.
+// 핵심 원칙: 저장값이 있으면 절대 기본값으로 덮지 않습니다.
+// v40이 만든 '정확한 초기 패턴'만 감지해서, 남아 있는 v39 이전 upper/lower 저장값으로 되돌립니다.
+(function recoverFromV40ResetV42(){
+  const K="wt_program_version", V=42;
+  if (lsGet(K,0) >= V) return;
+  const typeFor={월:"upper",화:"lower",수:"upper",목:"lower",금:"upper",토:"lower"};
   const A=["bench","incline","cablerow","legpress","legcurl","lateral","reardelt","hangingraise","cablecrunch","plank"];
   const B=["dips","assisted_chinup","rdl","legextension","ohp","triceps_pushdown","bicep","hangingraise_cardio","cablecrunch_cardio","plank_cardio"];
-  const map={월:A,수:A,금:A,화:B,목:B,토:B};
-  Object.entries(map).forEach(([day,on])=>{ const dt=DAY_TYPE[day], natural=EXERCISES[dt].map(e=>e.id); state.selection[day]={}; state.cardioSelection[day]={}; (CARDIO_OPTIONS[dt]||[]).forEach(o=>state.cardioSelection[day][o.key]=(o.key==="treadmill40")); natural.forEach(id=>state.selection[day][id]=on.includes(id)); state.order[day]=[...on,...natural.filter(id=>!on.includes(id))]; on.forEach(id=>{ const ex=EXERCISES[dt].find(e=>e.id===id); if(!ex)return; const cfg=getDefaultConfig(ex); cfg.sets=cfg.sets.slice(0,3); while(cfg.sets.length<3)cfg.sets.push({...cfg.sets[cfg.sets.length-1]}); state.configs[`${day}:${id}`]=cfg; }); });
-  // A: 중강도 30분 기본, B: 7/4 인터벌 40분 기본
-  ["월","수","금"].forEach(day=>{state.cardioChoice[day]="treadmill40"; state.cardioConfig[`${day}:treadmill40:main`]={durationMin:29,highIncline:4,highSpeed:6,lowIncline:4,lowSpeed:6}; state.cardioConfig[`${day}:treadmill40:finish`]={durationMin:1,incline:4,speed:6}; state.cardioNames[`${day}:treadmill40`]="중강도 걷기 30분";});
-  ["화","목","토"].forEach(day=>{state.cardioChoice[day]="treadmill40"; state.cardioNames[`${day}:treadmill40`]="7/4 경사 인터벌 40분";});
-  lsSet("wt_exercise_selection",state.selection);lsSet("wt_cardio_selection",state.cardioSelection);lsSet("wt_exercise_order",state.order);lsSet("wt_exercise_configs",state.configs);lsSet("wt_cardio_choice",state.cardioChoice);lsSet("wt_cardio_config",state.cardioConfig);lsSet("wt_cardio_names",state.cardioNames);lsSet(K,V);
+  const resetMap={월:A,수:A,금:A,화:B,목:B,토:B};
+  const sameArray=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+  const sameSelection=(obj,on,natural)=>{
+    if(!obj) return false;
+    return natural.every(id=>Boolean(obj[id])===on.includes(id));
+  };
+  const clone=x=>JSON.parse(JSON.stringify(x));
+
+  ["월","화","수","목","금","토"].forEach(day=>{
+    const type=typeFor[day], on=resetMap[day], natural=EXERCISES[type].map(e=>e.id);
+    const resetOrder=[...on,...natural.filter(id=>!on.includes(id))];
+    const legacySel=state.selection[type];
+    const legacyOrder=state.order[type];
+
+    // v40이 정확히 만든 선택/순서일 때만 구 저장값을 복원합니다.
+    if(legacySel && sameSelection(state.selection[day],on,natural)) state.selection[day]=clone(legacySel);
+    if(Array.isArray(legacyOrder) && sameArray(state.order[day],resetOrder)) state.order[day]=[...legacyOrder];
+
+    // v40은 ON 운동의 요일별 세트값을 기본값으로 덮었습니다.
+    // 같은 운동의 구형 저장값(base key)이 남아 있으면 그것을 우선 복원합니다.
+    on.forEach(id=>{
+      const ex=EXERCISES[type].find(e=>e.id===id); if(!ex) return;
+      const dayKey=`${day}:${id}`;
+      const legacy=state.configs[id];
+      if(legacy && state.configs[dayKey]) {
+        const def=getDefaultConfig(ex); def.sets=def.sets.slice(0,3); while(def.sets.length<3) def.sets.push({...def.sets[def.sets.length-1]});
+        if(JSON.stringify(state.configs[dayKey])===JSON.stringify(def)) state.configs[dayKey]=clone(legacy);
+      }
+    });
+
+    // v40이 유산소 선택을 treadmill40 하나로 강제한 경우에만 구 선택값 복원.
+    const opts=(CARDIO_OPTIONS[type]||[]).map(o=>o.key);
+    const csel=state.cardioSelection[day]||{};
+    const looksReset=opts.length>0 && opts.every(k=>Boolean(csel[k])===(k==="treadmill40"));
+    if(looksReset && state.cardioSelection[type]) state.cardioSelection[day]=clone(state.cardioSelection[type]);
+    const legacyChoice=state.cardioChoice[type] || state.cardioChoice[`${type}:${day}`];
+    if(state.cardioChoice[day]==="treadmill40" && legacyChoice) state.cardioChoice[day]=legacyChoice;
+
+    // v40이 덮은 유산소 구간값도 기존 type 기반 값이 남아 있을 때만 복원.
+    (CARDIO_OPTIONS[type]||[]).forEach(opt=>(opt.phases||[]).forEach(ph=>{
+      const dk=`${day}:${opt.key}:${ph.key}`, lk=`${type}:${opt.key}:${ph.key}`;
+      if(state.cardioConfig[lk] && state.cardioConfig[dk]) state.cardioConfig[dk]={...state.cardioConfig[lk]};
+    }));
+  });
+
+  state.cardioNames = state.cardioNames || {};
+  lsSet("wt_exercise_selection",state.selection);
+  lsSet("wt_exercise_order",state.order);
+  lsSet("wt_exercise_configs",state.configs);
+  lsSet("wt_cardio_selection",state.cardioSelection);
+  lsSet("wt_cardio_choice",state.cardioChoice);
+  lsSet("wt_cardio_config",state.cardioConfig);
+  lsSet("wt_cardio_names",state.cardioNames);
+  lsSet(K,V);
 })();
 
 // v33: 모든 요일에서 웨이트/유산소 선택 가능. 기존 저장값은 변경하지 않습니다.

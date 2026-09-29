@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=45", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=46", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -102,6 +102,9 @@ const EXERCISES = {
     { id: "cablecrunch", name: "케이블 크런치", unit: "kg", tip: "엉덩이 위치를 크게 움직이지 않고 갈비뼈를 골반 쪽으로 말아 복부를 수축하세요. 팔로 로프를 당기지 않습니다.", breath: "말아 내릴 때 내쉬고, 펼 때 들이쉬세요", substitutes: [{name:"맨몸 크런치",unit:"bodyweight",tip:"허리를 바닥에 붙이고 복부로 상체를 짧게 말아올립니다.",breath:"올릴 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:20,rest:45},{value:null,reps:20,rest:45}]}], sets: [
       { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
     ] },
+    { id: "abdominal", name: "Abdominal", unit: "kg", tip: "등과 골반을 패드에 안정적으로 고정하고 복근으로 갈비뼈를 골반 쪽으로 말아내리듯 수축하세요. 팔이나 반동으로 밀지 말고 복부 수축에 집중합니다.", breath: "상체를 말아 수축할 때 내쉬고, 천천히 돌아올 때 들이쉬세요", substitutes: [], sets: [
+      { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }
+    ] },
     { id: "woodchop", name: "케이블 우드초퍼", unit: "kg", tip: "케이블을 양손으로 잡고 몸통을 회전해 대각선 방향으로 당깁니다. 팔로만 당기지 말고 복사근과 몸통 회전에 집중하세요. 좌우 동일하게 수행합니다.", breath: "당길 때 내쉬고, 돌아올 때 들이쉬세요", substitutes: [{name:"러시안 트위스트",unit:"bodyweight",tip:"상체를 약간 뒤로 기울이고 좌우로 천천히 회전하세요.",breath:"회전할 때 내쉬고, 중앙에서 들이쉬세요",sets:[{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45},{value:null,reps:16,rest:45}]}], sets: [
       { value: 20, reps: 15, rest: 45 }, { value: 25, reps: 12, rest: 45 }, { value: 30, reps: 10, rest: 45 }
     ] },
@@ -115,6 +118,9 @@ const EXERCISES = {
     ] },
     { id: "cablecrunch_cardio", name: "케이블 크런치", unit: "kg", tip: "엉덩이 위치를 크게 움직이지 않고 갈비뼈를 골반 쪽으로 말아 복부를 수축하세요. 팔로 로프를 당기지 않습니다.", breath: "말아 내릴 때 내쉬고, 펼 때 들이쉬세요", sets: [
       { value: 60, reps: 20, rest: 45 }, { value: 60, reps: 20, rest: 45 }
+    ] },
+    { id: "abdominal_cardio", name: "Abdominal", unit: "kg", tip: "등과 골반을 패드에 안정적으로 고정하고 복근으로 갈비뼈를 골반 쪽으로 말아내리듯 수축하세요. 팔이나 반동으로 밀지 말고 복부 수축에 집중합니다.", breath: "상체를 말아 수축할 때 내쉬고, 천천히 돌아올 때 들이쉬세요", sets: [
+      { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }, { value: 30, reps: 15, rest: 45 }
     ] },
     { id: "plank_cardio", name: "플랭크", unit: "sec", defaultWorkSec: 40, tip: "팔꿈치를 어깨 아래에 두고 머리부터 발끝까지 일직선을 유지합니다. 허리가 처지지 않도록 복부와 엉덩이에 힘을 주세요.", breath: "숨을 참지 말고 편안하게 이어가세요", sets: [
       { value: 40, reps: null, rest: 40 }, { value: 40, reps: null, rest: 40 }
@@ -263,7 +269,7 @@ const state = {
   orderMoveSelected: null, // 순서 변경용 선택 항목(저장 불필요)
 };
 
-const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep"];
+const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep", "abdominal", "abdominal_cardio"];
 
 // v16 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
 // 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
@@ -1531,11 +1537,10 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <button data-orderselect="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 변경 선택" style="width:34px;height:34px;flex-shrink:0;border:1px solid ${state.orderMoveSelected === ex.id ? "#F5C518" : "#545C6B"};border-radius:8px;background:${state.orderMoveSelected === ex.id ? "#F5C518" : "#1E222A"};color:${state.orderMoveSelected === ex.id ? "#14161A" : "#B8BFC9"};font-size:12px;font-weight:800">${state.orderMoveSelected === ex.id ? "선택" : "이동"}</button>
+                      <div style="display:flex;gap:4px;flex-shrink:0"><button data-moveex="${ex.id}|-1" aria-label="${getExDisplay(ex).name} 위로 한 칸" style="width:34px;height:34px;border:1px solid #545C6B;border-radius:8px;background:#1E222A;color:#B8BFC9;font-size:16px;font-weight:800">↑</button><button data-moveex="${ex.id}|1" aria-label="${getExDisplay(ex).name} 아래로 한 칸" style="width:34px;height:34px;border:1px solid #545C6B;border-radius:8px;background:#1E222A;color:#B8BFC9;font-size:16px;font-weight:800">↓</button></div>
                     </div>`;
                 })
                 .join("")}
-              ${state.orderMoveSelected ? `<div style="position:sticky;bottom:8px;z-index:3;margin-top:10px;padding:10px;background:#1E222A;border:1px solid #545C6B;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25)"><div style="font-size:12px;color:#B8BFC9;margin-bottom:8px">선택한 운동 순서 이동</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><button data-moveselected="top">맨 위</button><button data-moveselected="-3">▲ 3칸</button><button data-moveselected="-1">▲ 1칸</button><button data-moveselected="1">▼ 1칸</button><button data-moveselected="3">▼ 3칸</button><button data-moveselected="bottom">맨 아래</button></div></div>` : ""}
               <div style="margin-top:10px;padding-top:12px;border-top:1px solid #3A3F49">
                 <div style="font-size:13px;font-weight:800;margin-bottom:8px">요일 설정 복사</div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">${["월","화","수","목","금","토"].filter(d=>d!==weekdayKey()).map(d=>`<label style="font-size:13px"><input type="checkbox" data-copytarget="${d}"> ${d}</label>`).join("")}</div>
@@ -2152,7 +2157,12 @@ function attachHandlers() {
   if (selToggleEl) {
     selToggleEl.onclick = () => {
       state.selectionOpen = !state.selectionOpen;
+      const opening = state.selectionOpen;
       render();
+      if (opening) requestAnimationFrame(() => requestAnimationFrame(() => {
+        const box = document.querySelector("[data-toggleselection]");
+        if (box) box.scrollIntoView({ block: "start", behavior: "smooth" });
+      }));
     };
   }
 
@@ -2174,14 +2184,7 @@ function attachHandlers() {
 
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
-
-  // v45: 드래그 정렬 제거. 모바일 스크롤과 충돌하지 않는 선택식 순서 이동.
-  document.querySelectorAll("[data-orderselect]").forEach((el)=>{
-    el.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); const id=el.getAttribute("data-orderselect"); state.orderMoveSelected = state.orderMoveSelected === id ? null : id; render(); };
-  });
-  document.querySelectorAll("[data-moveselected]").forEach((el)=>{
-    el.onclick=(e)=>{ e.preventDefault(); if(!state.orderMoveSelected) return; moveExercise(getDayType(state.selectedDate), state.orderMoveSelected, el.getAttribute("data-moveselected")); };
-  });
+  // v46: 드래그/다중칸 이동 제거. 각 항목의 ↑/↓ 버튼으로 한 칸씩 이동합니다.
 
   // v45: 텍스트 편집창 Enter=다음, 마지막=완료. textarea 줄바꿈은 Shift+Enter.
   document.querySelectorAll("[data-tipfield]").forEach((el)=>{

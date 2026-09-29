@@ -639,30 +639,77 @@ function saveCardioName(optionKey, name) {
 }
 
 function estimateWorkout(dayType, exercises, cardioOpt) {
+  // Dynamic estimate from the user's current weekday settings.
+  // Calories are estimates, not measurements. If no saved profile weight exists,
+  // keep the legacy 70 kg fallback so older installs continue to work.
   const weight = Number((state.profile && state.profile.weight) || state.profileForm.weight || 70) || 70;
-  let strengthSec = 0;
+  const kcalFromMet = (met, sec) => Math.max(0, Number(met) || 0) * 3.5 * weight / 200 * (Math.max(0, Number(sec) || 0) / 60);
+
+  let activeSec = 0, restSec = 0, transitionSec = 0;
   exercises.forEach((ex) => {
-    const cfg = getConfig(ex); const sets = getEffectiveSets(ex, cfg);
-    sets.forEach((st, i) => { strengthSec += Number(cfg.workSec || DEFAULT_WORK_SECONDS); if (i < sets.length - 1) strengthSec += Number(st.rest || 0); });
-    strengthSec += 45; // 기구 이동/세팅 여유
+    const cfg = getConfig(ex);
+    const sets = getEffectiveSets(ex, cfg);
+    sets.forEach((st, i) => {
+      activeSec += Math.max(0, Number(cfg.workSec || DEFAULT_WORK_SECONDS));
+      if (i < sets.length - 1) restSec += Math.max(0, Number(st.rest || 0));
+    });
+    if (sets.length) transitionSec += 45; // 기구 이동/세팅 예상시간
   });
+
+  // Do not count all rest/setup time as vigorous lifting. Active sets use 5 MET,
+  // inter-set rest 1.8 MET, and equipment transitions 2.0 MET.
+  const strengthKcal = kcalFromMet(5.0, activeSec) + kcalFromMet(1.8, restSec) + kcalFromMet(2.0, transitionSec);
+
+  const treadmillMet = (speedKmh, inclinePct) => {
+    const speed = Math.max(0, Number(speedKmh) || 0);
+    const grade = Math.max(0, Number(inclinePct) || 0) / 100;
+    const mmin = speed * 1000 / 60;
+    // ACSM walking equation for walking speeds; running equation for faster running.
+    const vo2 = speed <= 7.0
+      ? 0.1 * mmin + 1.8 * mmin * grade + 3.5
+      : 0.2 * mmin + 0.9 * mmin * grade + 3.5;
+    return Math.max(1, vo2 / 3.5);
+  };
+
   let cardioSec = 0, cardioKcal = 0;
   if (cardioOpt) {
     cardioOpt.phases.forEach((ph) => {
-      const sec = getCardioDurationSeconds(dayType, cardioOpt.key, ph); cardioSec += sec;
-      const f = getCardioFields(dayType, cardioOpt.key, ph); const typ = ph.type || cardioOpt.type;
-      let met = typ === "stairs" ? 8.0 : typ === "bike" ? 6.5 : 5.5;
+      const sec = getCardioDurationSeconds(dayType, cardioOpt.key, ph);
+      cardioSec += sec;
+      const f = getCardioFields(dayType, cardioOpt.key, ph);
+      const typ = ph.type || cardioOpt.type;
+
       if (typ === "treadmill") {
-        const speed = Number(f.speed ?? f.highSpeed ?? 6); const incline = Number(f.incline ?? ((Number(f.highIncline||0)+Number(f.lowIncline||0))/2) ?? 0);
-        const mmin = speed * 1000 / 60; const vo2 = 0.1*mmin + 1.8*mmin*(incline/100) + 3.5; met = Math.max(2, vo2/3.5);
+        // Interval phases are calculated from high/low settings in their actual time ratio.
+        const hiDur = Number(f.highSeconds);
+        const loDur = Number(f.lowSeconds);
+        const hasInterval = Number.isFinite(hiDur) && hiDur > 0 && Number.isFinite(loDur) && loDur > 0 &&
+          (f.highIncline != null || f.lowIncline != null || f.highSpeed != null || f.lowSpeed != null);
+        if (hasInterval) {
+          const cycle = hiDur + loDur;
+          const hiSec = sec * hiDur / cycle;
+          const loSec = sec - hiSec;
+          cardioKcal += kcalFromMet(treadmillMet(f.highSpeed ?? f.speed ?? 6, f.highIncline ?? f.incline ?? 0), hiSec);
+          cardioKcal += kcalFromMet(treadmillMet(f.lowSpeed ?? f.speed ?? 6, f.lowIncline ?? f.incline ?? 0), loSec);
+        } else {
+          cardioKcal += kcalFromMet(treadmillMet(f.speed ?? 6, f.incline ?? 0), sec);
+        }
+      } else if (typ === "stairs") {
+        cardioKcal += kcalFromMet(8.0, sec);
+      } else if (typ === "bike") {
+        cardioKcal += kcalFromMet(6.5, sec);
+      } else {
+        cardioKcal += kcalFromMet(5.0, sec);
       }
-      cardioKcal += met * 3.5 * weight / 200 * (sec/60);
     });
   }
-  const strengthKcal = 5.0 * 3.5 * weight / 200 * (strengthSec/60);
-  return { minutes: Math.max(0, Math.round((strengthSec + cardioSec)/60)), calories: Math.max(0, Math.round(strengthKcal + cardioKcal)) };
-}
 
+  const totalSec = activeSec + restSec + transitionSec + cardioSec;
+  return {
+    minutes: Math.max(0, Math.round(totalSec / 60)),
+    calories: Math.max(0, Math.round(strengthKcal + cardioKcal))
+  };
+}
 function copyWeekdaySettings(sourceDay, targets) {
   const srcType = DAY_TYPE[sourceDay];
   targets.forEach((day) => {

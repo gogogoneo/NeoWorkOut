@@ -1209,7 +1209,6 @@ function getSelectedWorkoutForDate(dateStr = state.selectedDate) {
   return { dayType, exercises, cardioOpt };
 }
 function startWholeWorkout() {
-  haptic([35, 35, 35]);
   const now = Date.now();
   state.workoutSessions[state.selectedDate] = { start: now, end: null, minutes: null, calories: null };
   lsSet("wt_workout_sessions", state.workoutSessions);
@@ -1217,7 +1216,6 @@ function startWholeWorkout() {
   render();
 }
 function finishWholeWorkout() {
-  haptic([60, 40, 60]);
   const rec = getWorkoutSession();
   if (!rec || !rec.start) return;
   const end = Date.now();
@@ -1275,14 +1273,6 @@ function render() {
     });
   }
 }
-
-// ---------- Haptic feedback ----------
-function haptic(pattern = 120) {
-  try { if ("vibrate" in navigator) navigator.vibrate(pattern); } catch (_) {}
-}
-function hapticSetStart() { haptic([160, 70, 160]); }
-function hapticRestStart() { haptic(320); }
-function hapticExerciseDone() { haptic([220, 90, 220, 90, 360]); }
 
 // ---------- Calendar view ----------
 function calendarHTML() {
@@ -1803,6 +1793,17 @@ function timerBarHTML() {
     </div>`;
 }
 
+// ---------- Timer vibration ----------
+function timerVibrate(pattern) {
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(pattern);
+    }
+  } catch (e) {
+    // 진동 미지원/차단 시 운동 타이머는 그대로 진행
+  }
+}
+
 // ---------- Timer logic ----------
 function makeWorkTimer(ex, setIdx) {
   const cfg = getConfig(ex);
@@ -1880,11 +1881,11 @@ function handleSetTimerFinish(t) {
       if (idx >= setCount) idx = 0;
       state.activeExerciseId = nextEx.id;
       state.activeSetIdx = idx;
-      hapticSetStart();
+      timerVibrate([140, 70, 140]);
       announceSet(nextEx, idx);
       state.timer = makeWorkTimer(nextEx, idx);
     } else {
-      hapticExerciseDone();
+      timerVibrate([220, 90, 220, 90, 350]);
       speak("운동을 마쳤습니다. 수고하셨습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1896,7 +1897,7 @@ function handleSetTimerFinish(t) {
     markSetComplete(t.exId, t.setIdx);
     // 마지막 세트가 끝난 단독 운동은 불필요한 휴식 없이 오늘 운동 목록으로 즉시 복귀한다.
     if (t.nextSetIdx == null && (!state.queue || state.queue.length === 0)) {
-      hapticExerciseDone();
+      timerVibrate([220, 90, 220, 90, 350]);
       speak("이 운동을 완료했습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1907,13 +1908,13 @@ function handleSetTimerFinish(t) {
       state.selectedCardioKey = null;
       normalizeHistoryToWorkoutList();
     } else if (t.restSec > 0) {
-      hapticRestStart();
+      timerVibrate(300);
       announceRest(t.restSec);
       state.timer = { kind: "setRest", exId: t.exId, setIdx: t.setIdx, nextSetIdx: t.nextSetIdx, isLastSet: t.nextSetIdx === null, remaining: t.restSec, total: t.restSec };
     } else if (t.nextSetIdx != null) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeSetIdx = t.nextSetIdx;
-      hapticSetStart();
+      timerVibrate([140, 70, 140]);
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -1924,7 +1925,7 @@ function handleSetTimerFinish(t) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeExerciseId = t.exId;
       state.activeSetIdx = t.nextSetIdx;
-      hapticSetStart();
+      timerVibrate([140, 70, 140]);
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -2015,7 +2016,7 @@ function startExercise(ex) {
   if (idx >= setCount) idx = 0;
   state.activeExerciseId = ex.id;
   state.activeSetIdx = idx;
-  hapticSetStart();
+  timerVibrate([140, 70, 140]);
   announceSet(ex, idx);
   state.timer = makeWorkTimer(ex, idx);
   render();
@@ -2034,7 +2035,7 @@ function startBlock(list) {
   state.queue = restIds;
   state.activeExerciseId = first.id;
   state.activeSetIdx = idx;
-  hapticSetStart();
+  timerVibrate([140, 70, 140]);
   announceSet(first, idx);
   state.timer = makeWorkTimer(first, idx);
   render();

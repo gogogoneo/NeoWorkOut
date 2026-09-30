@@ -1209,6 +1209,7 @@ function getSelectedWorkoutForDate(dateStr = state.selectedDate) {
   return { dayType, exercises, cardioOpt };
 }
 function startWholeWorkout() {
+  haptic([35, 35, 35]);
   const now = Date.now();
   state.workoutSessions[state.selectedDate] = { start: now, end: null, minutes: null, calories: null };
   lsSet("wt_workout_sessions", state.workoutSessions);
@@ -1216,6 +1217,7 @@ function startWholeWorkout() {
   render();
 }
 function finishWholeWorkout() {
+  haptic([60, 40, 60]);
   const rec = getWorkoutSession();
   if (!rec || !rec.start) return;
   const end = Date.now();
@@ -1274,6 +1276,10 @@ function render() {
   }
 }
 
+// ---------- Haptic feedback ----------
+function haptic(pattern = 25) {
+  try { if ("vibrate" in navigator) navigator.vibrate(pattern); } catch (_) {}
+}
 // ---------- Calendar view ----------
 function calendarHTML() {
   const year = state.calYear, month = state.calMonth;
@@ -1870,9 +1876,11 @@ function handleSetTimerFinish(t) {
       if (idx >= setCount) idx = 0;
       state.activeExerciseId = nextEx.id;
       state.activeSetIdx = idx;
+      hapticSetStart();
       announceSet(nextEx, idx);
       state.timer = makeWorkTimer(nextEx, idx);
     } else {
+      hapticWorkoutDone();
       speak("운동을 마쳤습니다. 수고하셨습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1884,6 +1892,7 @@ function handleSetTimerFinish(t) {
     markSetComplete(t.exId, t.setIdx);
     // 마지막 세트가 끝난 단독 운동은 불필요한 휴식 없이 오늘 운동 목록으로 즉시 복귀한다.
     if (t.nextSetIdx == null && (!state.queue || state.queue.length === 0)) {
+      hapticWorkoutDone();
       speak("이 운동을 완료했습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1894,11 +1903,13 @@ function handleSetTimerFinish(t) {
       state.selectedCardioKey = null;
       normalizeHistoryToWorkoutList();
     } else if (t.restSec > 0) {
+      hapticRestStart();
       announceRest(t.restSec);
       state.timer = { kind: "setRest", exId: t.exId, setIdx: t.setIdx, nextSetIdx: t.nextSetIdx, isLastSet: t.nextSetIdx === null, remaining: t.restSec, total: t.restSec };
     } else if (t.nextSetIdx != null) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeSetIdx = t.nextSetIdx;
+      hapticSetStart();
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -1909,6 +1920,7 @@ function handleSetTimerFinish(t) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeExerciseId = t.exId;
       state.activeSetIdx = t.nextSetIdx;
+      hapticSetStart();
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -1919,10 +1931,7 @@ function handleSetTimerFinish(t) {
 
 function finishActiveTimer() {
   const t = state.timer;
-  if (navigator.vibrate) {
-    try { navigator.vibrate(200); } catch (e) {}
-  }
-  if (t && (t.kind === "setWork" || t.kind === "setRest")) {
+if (t && (t.kind === "setWork" || t.kind === "setRest")) {
     handleSetTimerFinish(t);
   } else if (t && t.kind === "cardioProgram") {
     const dayType = getDayType(state.selectedDate);
@@ -2002,6 +2011,7 @@ function startExercise(ex) {
   if (idx >= setCount) idx = 0;
   state.activeExerciseId = ex.id;
   state.activeSetIdx = idx;
+  hapticSetStart();
   announceSet(ex, idx);
   state.timer = makeWorkTimer(ex, idx);
   render();
@@ -2020,6 +2030,7 @@ function startBlock(list) {
   state.queue = restIds;
   state.activeExerciseId = first.id;
   state.activeSetIdx = idx;
+  hapticSetStart();
   announceSet(first, idx);
   state.timer = makeWorkTimer(first, idx);
   render();

@@ -1793,17 +1793,6 @@ function timerBarHTML() {
     </div>`;
 }
 
-// ---------- Timer vibration ----------
-function timerVibrate(pattern) {
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-      navigator.vibrate(pattern);
-    }
-  } catch (e) {
-    // 진동 미지원/차단 시 운동 타이머는 그대로 진행
-  }
-}
-
 // ---------- Timer logic ----------
 function makeWorkTimer(ex, setIdx) {
   const cfg = getConfig(ex);
@@ -1881,11 +1870,10 @@ function handleSetTimerFinish(t) {
       if (idx >= setCount) idx = 0;
       state.activeExerciseId = nextEx.id;
       state.activeSetIdx = idx;
-      timerVibrate([140, 70, 140]);
+      try { if (navigator.vibrate) navigator.vibrate([140,70,140]); } catch (e) {}
       announceSet(nextEx, idx);
       state.timer = makeWorkTimer(nextEx, idx);
     } else {
-      timerVibrate([220, 90, 220, 90, 350]);
       speak("운동을 마쳤습니다. 수고하셨습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1897,7 +1885,6 @@ function handleSetTimerFinish(t) {
     markSetComplete(t.exId, t.setIdx);
     // 마지막 세트가 끝난 단독 운동은 불필요한 휴식 없이 오늘 운동 목록으로 즉시 복귀한다.
     if (t.nextSetIdx == null && (!state.queue || state.queue.length === 0)) {
-      timerVibrate([220, 90, 220, 90, 350]);
       speak("이 운동을 완료했습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1908,13 +1895,13 @@ function handleSetTimerFinish(t) {
       state.selectedCardioKey = null;
       normalizeHistoryToWorkoutList();
     } else if (t.restSec > 0) {
-      timerVibrate(300);
+      try { if (navigator.vibrate) navigator.vibrate(300); } catch (e) {}
       announceRest(t.restSec);
       state.timer = { kind: "setRest", exId: t.exId, setIdx: t.setIdx, nextSetIdx: t.nextSetIdx, isLastSet: t.nextSetIdx === null, remaining: t.restSec, total: t.restSec };
     } else if (t.nextSetIdx != null) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeSetIdx = t.nextSetIdx;
-      timerVibrate([140, 70, 140]);
+      try { if (navigator.vibrate) navigator.vibrate([140,70,140]); } catch (e) {}
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -1925,7 +1912,7 @@ function handleSetTimerFinish(t) {
       const ex = exercises.find((e) => e.id === t.exId);
       state.activeExerciseId = t.exId;
       state.activeSetIdx = t.nextSetIdx;
-      timerVibrate([140, 70, 140]);
+      try { if (navigator.vibrate) navigator.vibrate([140,70,140]); } catch (e) {}
       announceSet(ex, t.nextSetIdx);
       state.timer = makeWorkTimer(ex, t.nextSetIdx);
     } else {
@@ -2016,7 +2003,7 @@ function startExercise(ex) {
   if (idx >= setCount) idx = 0;
   state.activeExerciseId = ex.id;
   state.activeSetIdx = idx;
-  timerVibrate([140, 70, 140]);
+  try { if (navigator.vibrate) navigator.vibrate([140,70,140]); } catch (e) {}
   announceSet(ex, idx);
   state.timer = makeWorkTimer(ex, idx);
   render();
@@ -2035,7 +2022,7 @@ function startBlock(list) {
   state.queue = restIds;
   state.activeExerciseId = first.id;
   state.activeSetIdx = idx;
-  timerVibrate([140, 70, 140]);
+  try { if (navigator.vibrate) navigator.vibrate([140,70,140]); } catch (e) {}
   announceSet(first, idx);
   state.timer = makeWorkTimer(first, idx);
   render();

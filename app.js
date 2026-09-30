@@ -1277,9 +1277,13 @@ function render() {
 }
 
 // ---------- Haptic feedback ----------
-function haptic(pattern = 25) {
+function haptic(pattern = 120) {
   try { if ("vibrate" in navigator) navigator.vibrate(pattern); } catch (_) {}
 }
+function hapticSetStart() { haptic([160, 70, 160]); }
+function hapticRestStart() { haptic(320); }
+function hapticExerciseDone() { haptic([220, 90, 220, 90, 360]); }
+
 // ---------- Calendar view ----------
 function calendarHTML() {
   const year = state.calYear, month = state.calMonth;
@@ -1880,7 +1884,7 @@ function handleSetTimerFinish(t) {
       announceSet(nextEx, idx);
       state.timer = makeWorkTimer(nextEx, idx);
     } else {
-      hapticWorkoutDone();
+      hapticExerciseDone();
       speak("운동을 마쳤습니다. 수고하셨습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1892,7 +1896,7 @@ function handleSetTimerFinish(t) {
     markSetComplete(t.exId, t.setIdx);
     // 마지막 세트가 끝난 단독 운동은 불필요한 휴식 없이 오늘 운동 목록으로 즉시 복귀한다.
     if (t.nextSetIdx == null && (!state.queue || state.queue.length === 0)) {
-      hapticWorkoutDone();
+      hapticExerciseDone();
       speak("이 운동을 완료했습니다.");
       state.activeExerciseId = null;
       state.queue = null;
@@ -1931,7 +1935,7 @@ function handleSetTimerFinish(t) {
 
 function finishActiveTimer() {
   const t = state.timer;
-if (t && (t.kind === "setWork" || t.kind === "setRest")) {
+  if (t && (t.kind === "setWork" || t.kind === "setRest")) {
     handleSetTimerFinish(t);
   } else if (t && t.kind === "cardioProgram") {
     const dayType = getDayType(state.selectedDate);

@@ -1325,10 +1325,10 @@ function calendarHTML() {
         <div style="font-size:13px;color:#8A93A3">이번 달 완료 <span style="color:#4CAF7D;font-weight:700">${completedDays}일</span></div>
         <div style="font-size:13px;color:#8A93A3;text-align:right">총 소모 <span style="color:#F5C518;font-weight:700">약 ${totalCalories.toLocaleString()}kcal</span>${(() => { const prefix = `${state.calendarYear}-${pad(state.calendarMonth)}-`; const sessions = Object.entries(state.workoutSessions || {}).filter(([d,v]) => d.startsWith(prefix) && v && v.end); const totalSec = sessions.reduce((a,[,v]) => a + Number(v.elapsedSeconds ?? ((v.minutes || 0) * 60)), 0); const totalMin = Math.floor(totalSec/60); return totalSec ? `<br><span style="font-size:11px">실제 운동 ${totalMin >= 60 ? `${Math.floor(totalMin/60)}시간 ${totalMin%60}분` : totalMin > 0 ? `${totalMin}분` : `${totalSec}초`}</span>` : ""; })()}</div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px">
+      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px">
         ${WEEKDAY_MAP.map((w) => `<div style="text-align:center;font-size:12px;color:#8A93A3;padding:4px 0">${w}</div>`).join("")}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${cellsHTML}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">${cellsHTML}</div>
       <div style="display:flex;gap:14px;margin-top:16px;font-size:12px;color:#8A93A3">
         <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.upper.color};display:inline-block"></span> 전신 웨이트</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.lower.color};display:inline-block"></span> 유산소</span>

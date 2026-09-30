@@ -24,7 +24,7 @@
   .checkbox { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; }
   .checkbox.done { background:#4CAF7D; }
   .checkbox:not(.done) { border:1px solid #545C6B; }
-  .calCell { aspect-ratio:1; background:#1E222A; border:1px solid #262B34; border-radius:8px; color:#ECEEF2; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; padding:2px; gap:2px; }
+  .calCell { aspect-ratio:1 / 1.45; min-width:0; width:100%; box-sizing:border-box; background:#1E222A; border:1px solid #262B34; border-radius:8px; color:#ECEEF2; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; padding:3px 1px; gap:2px; overflow:hidden; }
   .calCell.today { border:2px solid #F5C518; }
   input[type=number] { width:64px; background:#14161A; border:1px solid #333944; border-radius:6px; color:#ECEEF2; padding:4px 8px; }
   .restBar { position:fixed; bottom:0; left:0; right:0; background:#1E222A; border-top:1px solid #333944; padding:14px 16px; box-shadow:0 -4px 20px rgba(0,0,0,0.4); }
@@ -33,6 +33,6 @@
 </head>
 <body>
 <div id="app"></div>
-<script src="app.js?v=49"></script>
+<script src="app.js?v=50"></script>
 </body>
 </html>

@@ -1294,7 +1294,9 @@ function calendarHTML() {
     const summary = state.summary[dateStr];
     const isToday = dateStr === todayStr();
     return `<button class="calCell ${isToday ? "today" : ""}" data-date="${dateStr}">
-        <span class="mono" style="font-size:13px">${d}(${getDayLabel(dateStr) === "일" ? "휴식" : (["월","수","금"].includes(getDayLabel(dateStr)) ? "A" : "B")})</span>
+        ${getDayLabel(dateStr) === "일"
+          ? `<span class="mono" style="font-size:13px;line-height:1.25;text-align:center">${d}<br><span style="font-size:10px;color:#8A93A3">(휴식)</span></span>`
+          : `<span class="mono" style="font-size:13px">${d}<span style="color:${["월","수","금"].includes(getDayLabel(dateStr)) ? "#F5C518" : "#58A6FF"}">(${["월","수","금"].includes(getDayLabel(dateStr)) ? "A" : "B"})</span></span>`}
         ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D;line-height:1.35;text-align:center;max-width:100%;white-space:nowrap"><span>${summary.calories}kcal</span>${summary.start && summary.end ? `<br><span>${summary.durationText || (summary.elapsedSeconds < 60 ? `${summary.elapsedSeconds || 0}초` : `${summary.minutes || 0}분`)}</span><br><span style="font-size:8px">${formatClockMs(summary.start)}–${formatClockMs(summary.end)}</span>` : ""}</span>` : ""}
       </button>`;
   }).join("");

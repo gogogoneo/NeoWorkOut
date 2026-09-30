@@ -1734,10 +1734,6 @@ function dayHTML() {
           </div>`;
         })() : ""}
         ${progressHTML}
-        <div style="padding:10px 16px 0">
-          <button id="vibrationTestBtn" style="width:100%;background:#2B313B;border:1px solid #46505F;border-radius:8px;padding:10px;color:#ECEEF2;font-weight:700">📳 진동 테스트 (1초)</button>
-          <div id="vibrationTestResult" style="font-size:11px;color:#8A93A3;text-align:center;margin-top:6px">버튼을 눌러 브라우저 진동 지원 여부를 확인하세요.</div>
-        </div>
       </div>
       <div style="height:14px"></div>
       <div style="padding:0 16px;margin-bottom:10px">
@@ -2162,24 +2158,6 @@ function attachHandlers() {
   };
 
   document.getElementById("toggleVoice").onclick = toggleVoice;
-  const vibrationTestBtn = document.getElementById("vibrationTestBtn");
-  if (vibrationTestBtn) vibrationTestBtn.onclick = () => {
-    const result = document.getElementById("vibrationTestResult");
-    const supported = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
-    let returned = false;
-    if (supported) {
-      try { returned = navigator.vibrate(1000); } catch (e) { returned = false; }
-    }
-    if (result) {
-      result.textContent = !supported
-        ? "❌ 이 브라우저는 Vibration API를 지원하지 않습니다."
-        : returned
-          ? "✅ 브라우저가 진동 요청을 허용했습니다. 실제로 진동했는지 확인하세요."
-          : "❌ 브라우저가 진동 요청을 거부했습니다.";
-      result.style.color = returned ? "#4CAF7D" : "#D6534A";
-    }
-  };
-
   const startWholeBtn = document.getElementById("startWholeWorkout");
   if (startWholeBtn) startWholeBtn.onclick = () => {
     const old = getWorkoutSession();

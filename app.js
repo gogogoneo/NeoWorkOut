@@ -1294,8 +1294,7 @@ function calendarHTML() {
     const summary = state.summary[dateStr];
     const isToday = dateStr === todayStr();
     return `<button class="calCell ${isToday ? "today" : ""}" data-date="${dateStr}">
-        <span class="mono" style="font-size:13px">${d}</span>
-        <div style="width:5px;height:5px;border-radius:50%;background:${DAY_INFO[dType].color}"></div>
+        <span class="mono" style="font-size:13px">${d}(${getDayLabel(dateStr) === "일" ? "휴식" : (["월","수","금"].includes(getDayLabel(dateStr)) ? "A" : "B")})</span>
         ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D;line-height:1.35;text-align:center;max-width:100%;white-space:nowrap"><span>${summary.calories}kcal</span>${summary.start && summary.end ? `<br><span>${summary.durationText || (summary.elapsedSeconds < 60 ? `${summary.elapsedSeconds || 0}초` : `${summary.minutes || 0}분`)}</span><br><span style="font-size:8px">${formatClockMs(summary.start)}–${formatClockMs(summary.end)}</span>` : ""}</span>` : ""}
       </button>`;
   }).join("");

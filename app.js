@@ -1219,18 +1219,20 @@ function finishWholeWorkout() {
   const rec = getWorkoutSession();
   if (!rec || !rec.start) return;
   const end = Date.now();
-  const minutes = Math.max(1, Math.round((end - rec.start) / 60000));
+  const elapsedSeconds = Math.max(0, Math.round((end - rec.start) / 1000));
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const durationText = elapsedSeconds < 60 ? `${elapsedSeconds}초` : `${minutes}분`;
   const w = getSelectedWorkoutForDate();
   const est = estimateWorkout(w.dayType, w.exercises, w.cardioOpt);
   const calories = est.calories;
-  state.workoutSessions[state.selectedDate] = { start: rec.start, end, minutes, calories };
+  state.workoutSessions[state.selectedDate] = { start: rec.start, end, minutes, elapsedSeconds, durationText, calories };
   lsSet("wt_workout_sessions", state.workoutSessions);
-  state.summary[state.selectedDate] = { calories, minutes, start: rec.start, end };
+  state.summary[state.selectedDate] = { calories, minutes, elapsedSeconds, durationText, start: rec.start, end };
   lsSet("wt_summary", state.summary);
   state.sessionStart = null;
   clearInterval(state.elapsedHandle);
   render();
-  setTimeout(() => alert(`오늘 운동 완료\n${formatClockMs(rec.start)} → ${formatClockMs(end)}\n총 ${minutes}분 · 예상 ${calories}kcal`), 0);
+  setTimeout(() => alert(`오늘 운동 완료\n${formatClockMs(rec.start)} → ${formatClockMs(end)}\n총 ${durationText} · 예상 ${calories}kcal`), 0);
 }
 
 function updateSummary(dateStr) {
@@ -1294,7 +1296,7 @@ function calendarHTML() {
     return `<button class="calCell ${isToday ? "today" : ""}" data-date="${dateStr}">
         <span class="mono" style="font-size:13px">${d}</span>
         <div style="width:5px;height:5px;border-radius:50%;background:${DAY_INFO[dType].color}"></div>
-        ${summary ? `<span class="mono" style="font-size:8.5px;color:#4CAF7D;line-height:1.3;text-align:center;max-width:100%;white-space:normal">${summary.minutes ? `${summary.calories}kcal · ${summary.minutes}분` : `${summary.calories}kcal`}${summary.start && summary.end ? `<br><span style="font-size:8px">${formatClockMs(summary.start)}–${formatClockMs(summary.end)}</span>` : ""}</span>` : ""}
+        ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D;line-height:1.35;text-align:center;max-width:100%;white-space:nowrap"><span>${summary.calories}kcal</span>${summary.start && summary.end ? `<br><span>${summary.durationText || (summary.elapsedSeconds < 60 ? `${summary.elapsedSeconds || 0}초` : `${summary.minutes || 0}분`)}</span><br><span style="font-size:8px">${formatClockMs(summary.start)}–${formatClockMs(summary.end)}</span>` : ""}</span>` : ""}
       </button>`;
   }).join("");
 
@@ -1321,7 +1323,7 @@ function calendarHTML() {
       </div>
       <div class="card" style="padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between">
         <div style="font-size:13px;color:#8A93A3">이번 달 완료 <span style="color:#4CAF7D;font-weight:700">${completedDays}일</span></div>
-        <div style="font-size:13px;color:#8A93A3;text-align:right">총 소모 <span style="color:#F5C518;font-weight:700">약 ${totalCalories.toLocaleString()}kcal</span>${(() => { const prefix = `${state.calendarYear}-${pad(state.calendarMonth)}-`; const totalMin = Object.entries(state.workoutSessions || {}).filter(([d,v]) => d.startsWith(prefix) && v && v.end && v.minutes).reduce((a,[,v]) => a + Number(v.minutes || 0), 0); return totalMin ? `<br><span style="font-size:11px">실제 운동 ${Math.floor(totalMin/60)}시간 ${totalMin%60}분</span>` : ""; })()}</div>
+        <div style="font-size:13px;color:#8A93A3;text-align:right">총 소모 <span style="color:#F5C518;font-weight:700">약 ${totalCalories.toLocaleString()}kcal</span>${(() => { const prefix = `${state.calendarYear}-${pad(state.calendarMonth)}-`; const sessions = Object.entries(state.workoutSessions || {}).filter(([d,v]) => d.startsWith(prefix) && v && v.end); const totalSec = sessions.reduce((a,[,v]) => a + Number(v.elapsedSeconds ?? ((v.minutes || 0) * 60)), 0); const totalMin = Math.floor(totalSec/60); return totalSec ? `<br><span style="font-size:11px">실제 운동 ${totalMin >= 60 ? `${Math.floor(totalMin/60)}시간 ${totalMin%60}분` : totalMin > 0 ? `${totalMin}분` : `${totalSec}초`}</span>` : ""; })()}</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px">
         ${WEEKDAY_MAP.map((w) => `<div style="text-align:center;font-size:12px;color:#8A93A3;padding:4px 0">${w}</div>`).join("")}
@@ -1423,7 +1425,7 @@ function exerciseCardHTML(ex, index) {
         <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">🏷️ 운동 이름</div>
         <input data-tipfield="${ex.id}|name" enterkeyhint="next" value="${escapeHTML(disp.name || "")}" style="width:100%;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;margin-bottom:8px">
         <div style="font-size:12px;color:#8A93A3;margin-bottom:5px">💡 운동 팁</div>
-        <textarea data-tipfield="${ex.id}|tip" enterkeyhint="next" style="width:100%;min-height:92px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.tip || "")}</textarea>
+        <textarea data-tipfield="${ex.id}|tip" enterkeyhint="next" style="width:100%;min-height:96px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.tip || "")}</textarea>
         <div style="font-size:12px;color:#8A93A3;margin:8px 0 5px">🫁 호흡</div>
         <textarea data-tipfield="${ex.id}|breath" enterkeyhint="done" style="width:100%;min-height:58px;box-sizing:border-box;background:#0F1115;border:1px solid #333944;border-radius:6px;color:#ECEEF2;padding:8px;font-size:14px;line-height:1.5;resize:vertical">${escapeHTML(disp.breath || "")}</textarea>
         <div style="display:flex;gap:7px;margin-top:8px">
@@ -1725,7 +1727,7 @@ function dayHTML() {
           const done = !!(ws && ws.start && ws.end);
           return `<div class="card" style="margin-top:10px;padding:11px 12px">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="font-size:12px;color:#8A93A3">${done ? `실제 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.minutes}분</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `시작 ${formatClockMs(ws.start)} · 운동 진행 중` : "전체 운동 시간을 실제로 기록합니다."}</div>
+              <div style="font-size:12px;color:#8A93A3">${done ? `실제 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.durationText || `${ws.minutes || 0}분`}</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `시작 ${formatClockMs(ws.start)} · 운동 진행 중` : "전체 운동 시간을 실제로 기록합니다."}</div>
               ${running ? `<button id="finishWholeWorkout" style="white-space:nowrap;background:#B64B4B;border:none;border-radius:8px;padding:9px 12px;color:white;font-weight:700">■ 운동 종료</button>` : `<button id="startWholeWorkout" style="white-space:nowrap;background:#4CAF7D;border:none;border-radius:8px;padding:9px 12px;color:#14161A;font-weight:700">${done ? "▶ 다시 시작" : "▶ 운동 시작"}</button>`}
             </div>
           </div>`;

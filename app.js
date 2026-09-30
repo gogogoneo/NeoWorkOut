@@ -1294,7 +1294,7 @@ function calendarHTML() {
     return `<button class="calCell ${isToday ? "today" : ""}" data-date="${dateStr}">
         <span class="mono" style="font-size:13px">${d}</span>
         <div style="width:5px;height:5px;border-radius:50%;background:${DAY_INFO[dType].color}"></div>
-        ${summary ? `<span class="mono" style="font-size:9px;color:#4CAF7D;line-height:1.25;text-align:center">${summary.calories}kcal · ${summary.minutes || "-"}분${summary.start && summary.end ? `<br>${formatClockMs(summary.start)}–${formatClockMs(summary.end)}` : ""}</span>` : ""}
+        ${summary ? `<span class="mono" style="font-size:8.5px;color:#4CAF7D;line-height:1.3;text-align:center;max-width:100%;white-space:normal">${summary.minutes ? `${summary.calories}kcal · ${summary.minutes}분` : `${summary.calories}kcal`}${summary.start && summary.end ? `<br><span style="font-size:8px">${formatClockMs(summary.start)}–${formatClockMs(summary.end)}</span>` : ""}</span>` : ""}
       </button>`;
   }).join("");
 
@@ -1321,7 +1321,7 @@ function calendarHTML() {
       </div>
       <div class="card" style="padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between">
         <div style="font-size:13px;color:#8A93A3">이번 달 완료 <span style="color:#4CAF7D;font-weight:700">${completedDays}일</span></div>
-        <div style="font-size:13px;color:#8A93A3">총 소모 <span style="color:#F5C518;font-weight:700">약 ${totalCalories.toLocaleString()}kcal</span></div>
+        <div style="font-size:13px;color:#8A93A3;text-align:right">총 소모 <span style="color:#F5C518;font-weight:700">약 ${totalCalories.toLocaleString()}kcal</span>${(() => { const prefix = `${state.calendarYear}-${pad(state.calendarMonth)}-`; const totalMin = Object.entries(state.workoutSessions || {}).filter(([d,v]) => d.startsWith(prefix) && v && v.end && v.minutes).reduce((a,[,v]) => a + Number(v.minutes || 0), 0); return totalMin ? `<br><span style="font-size:11px">실제 운동 ${Math.floor(totalMin/60)}시간 ${totalMin%60}분</span>` : ""; })()}</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px">
         ${WEEKDAY_MAP.map((w) => `<div style="text-align:center;font-size:12px;color:#8A93A3;padding:4px 0">${w}</div>`).join("")}

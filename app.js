@@ -1594,7 +1594,7 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <div style="display:flex;gap:4px;flex-shrink:0"><button data-moveex="${ex.id}|-1" aria-label="${getExDisplay(ex).name} 위로 한 칸" style="width:34px;height:34px;border:1px solid #545C6B;border-radius:8px;background:#1E222A;color:#B8BFC9;font-size:16px;font-weight:800">↑</button><button data-moveex="${ex.id}|1" aria-label="${getExDisplay(ex).name} 아래로 한 칸" style="width:34px;height:34px;border:1px solid #545C6B;border-radius:8px;background:#1E222A;color:#B8BFC9;font-size:16px;font-weight:800">↓</button></div>
+                      <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 이동" style="width:42px;height:38px;flex-shrink:0;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#B8BFC9;font-size:22px;line-height:1;touch-action:none;cursor:grab">≡</button>
                     </div>`;
                 })
                 .join("")}
@@ -2268,7 +2268,50 @@ function attachHandlers() {
 
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
-  // v46: 드래그/다중칸 이동 제거. 각 항목의 ↑/↓ 버튼으로 한 칸씩 이동합니다.
+  // v60: 오른쪽 ≡ 핸들을 길게 잡아 원하는 위치로 직접 이동합니다.
+  let dragState = null;
+  document.querySelectorAll("[data-draghandle]").forEach((handle) => {
+    handle.onpointerdown = (e) => {
+      e.preventDefault();
+      const exId = handle.getAttribute("data-draghandle");
+      const row = handle.closest("[data-sortrow]");
+      if (!row) return;
+      dragState = { exId, row, pointerId:e.pointerId };
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      row.style.opacity = "0.72";
+      row.style.transform = "scale(1.015)";
+      row.style.background = "#252B35";
+      if (navigator.vibrate) { try { navigator.vibrate(35); } catch (_) {} }
+    };
+    handle.onpointermove = (e) => {
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      const rows = [...document.querySelectorAll("[data-sortrow]")];
+      const over = rows.find(r => {
+        const b=r.getBoundingClientRect();
+        return e.clientY >= b.top && e.clientY <= b.bottom;
+      });
+      if (!over || over === dragState.row) return;
+      const b=over.getBoundingClientRect();
+      if (e.clientY < b.top + b.height/2) over.before(dragState.row);
+      else over.after(dragState.row);
+    };
+    const finishDrag = (e) => {
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      const rows=[...document.querySelectorAll("[data-sortrow]")];
+      const next=rows.map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
+      const wk=weekdayKey();
+      state.order={...state.order,[wk]:next};
+      lsSet("wt_exercise_order",state.order);
+      dragState.row.style.opacity="";
+      dragState.row.style.transform="";
+      dragState.row.style.background="";
+      try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+      dragState=null;
+      if (navigator.vibrate) { try { navigator.vibrate(45); } catch (_) {} }
+    };
+    handle.onpointerup=finishDrag;
+    handle.onpointercancel=finishDrag;
+  });
 
   // v45: 텍스트 편집창 Enter=다음, 마지막=완료. textarea 줄바꿈은 Shift+Enter.
   document.querySelectorAll("[data-tipfield]").forEach((el)=>{
@@ -2283,14 +2326,6 @@ function attachHandlers() {
     });
   });
   const cardioName=document.querySelector("[data-cardioname]"); if(cardioName){ cardioName.onchange=()=>saveCardioName(cardioName.getAttribute("data-cardioname"),cardioName.value); }
-
-  document.querySelectorAll("[data-moveex]").forEach((el) => {
-    el.onclick = () => {
-      const [exId, dir] = el.getAttribute("data-moveex").split("|");
-      const dayType = getDayType(state.selectedDate);
-      moveExercise(dayType, exId, Number(dir));
-    };
-  });
 
   document.querySelectorAll("[data-startex]").forEach((el) => {
     el.onclick = () => {

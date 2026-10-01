@@ -1594,7 +1594,7 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 이동" style="width:42px;height:38px;flex-shrink:0;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#B8BFC9;font-size:22px;line-height:1;touch-action:none;cursor:grab">≡</button>
+                      <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 이동" style="width:42px;height:38px;flex-shrink:0;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#B8BFC9;font-size:22px;line-height:1;touch-action:pan-y;cursor:grab">≡</button>
                     </div>`;
                 })
                 .join("")}
@@ -2268,52 +2268,53 @@ function attachHandlers() {
 
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
-  // v60: 오른쪽 ≡ 핸들을 길게 잡아 원하는 위치로 직접 이동합니다.
+  // v61: ≡ 핸들을 0.5초 길게 눌러야 순서 이동 모드가 시작됩니다.
   let dragState = null;
   document.querySelectorAll("[data-draghandle]").forEach((handle) => {
+    let pressTimer = null, pending = null;
+    const clearPending = () => { if (pressTimer) clearTimeout(pressTimer); pressTimer=null; pending=null; };
     handle.onpointerdown = (e) => {
-      e.preventDefault();
-      const exId = handle.getAttribute("data-draghandle");
-      const row = handle.closest("[data-sortrow]");
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      const row=handle.closest("[data-sortrow]");
       if (!row) return;
-      dragState = { exId, row, pointerId:e.pointerId };
-      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
-      row.style.opacity = "0.72";
-      row.style.transform = "scale(1.015)";
-      row.style.background = "#252B35";
-      if (navigator.vibrate) { try { navigator.vibrate(35); } catch (_) {} }
+      pending={row,pointerId:e.pointerId,x:e.clientX,y:e.clientY};
+      pressTimer=setTimeout(() => {
+        if (!pending || pending.pointerId !== e.pointerId) return;
+        dragState={row,pointerId:e.pointerId};
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        row.style.opacity="0.72"; row.style.transform="scale(1.015)"; row.style.background="#252B35";
+        try { if (navigator.vibrate) navigator.vibrate(45); } catch (_) {}
+        pressTimer=null;
+      },500);
     };
     handle.onpointermove = (e) => {
-      if (!dragState || dragState.pointerId !== e.pointerId) return;
-      const rows = [...document.querySelectorAll("[data-sortrow]")];
-      const over = rows.find(r => {
-        const b=r.getBoundingClientRect();
-        return e.clientY >= b.top && e.clientY <= b.bottom;
-      });
-      if (!over || over === dragState.row) return;
-      const b=over.getBoundingClientRect();
-      if (e.clientY < b.top + b.height/2) over.before(dragState.row);
-      else over.after(dragState.row);
-    };
-    const finishDrag = (e) => {
-      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      if (pending && !dragState && pending.pointerId===e.pointerId) {
+        if (Math.hypot(e.clientX-pending.x,e.clientY-pending.y)>10) clearPending();
+        return;
+      }
+      if (!dragState || dragState.pointerId!==e.pointerId) return;
+      e.preventDefault();
       const rows=[...document.querySelectorAll("[data-sortrow]")];
-      const next=rows.map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
-      const wk=weekdayKey();
-      state.order={...state.order,[wk]:next};
-      lsSet("wt_exercise_order",state.order);
-      dragState.row.style.opacity="";
-      dragState.row.style.transform="";
-      dragState.row.style.background="";
-      try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
-      dragState=null;
-      if (navigator.vibrate) { try { navigator.vibrate(45); } catch (_) {} }
+      const over=rows.find(r=>{const b=r.getBoundingClientRect();return e.clientY>=b.top&&e.clientY<=b.bottom;});
+      if (!over || over===dragState.row) return;
+      const b=over.getBoundingClientRect();
+      if (e.clientY<b.top+b.height/2) over.before(dragState.row); else over.after(dragState.row);
     };
-    handle.onpointerup=finishDrag;
-    handle.onpointercancel=finishDrag;
+    handle.onpointerup = (e) => {
+      if (pending && !dragState) { clearPending(); return; }
+      if (!dragState || dragState.pointerId!==e.pointerId) return;
+      const next=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
+      const wk=weekdayKey(); state.order={...state.order,[wk]:next}; lsSet("wt_exercise_order",state.order);
+      dragState.row.style.opacity=""; dragState.row.style.transform=""; dragState.row.style.background="";
+      dragState=null; clearPending();
+      try { if (navigator.vibrate) navigator.vibrate(45); } catch (_) {}
+    };
+    handle.onpointercancel = () => {
+      if (dragState) { dragState.row.style.opacity=""; dragState.row.style.transform=""; dragState.row.style.background=""; }
+      dragState=null; clearPending();
+    };
   });
 
-  // v45: 텍스트 편집창 Enter=다음, 마지막=완료. textarea 줄바꿈은 Shift+Enter.
   document.querySelectorAll("[data-tipfield]").forEach((el)=>{
     el.addEventListener("keydown",(e)=>{
       if(e.key!=="Enter" || e.isComposing) return;

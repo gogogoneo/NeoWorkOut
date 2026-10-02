@@ -2268,50 +2268,49 @@ function attachHandlers() {
 
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
-  // v61: ≡ 핸들을 0.5초 길게 눌러야 순서 이동 모드가 시작됩니다.
-  let dragState = null;
+  // v62: 0.45초 롱프레스 후에만 이동. 그 전 움직임은 일반 스크롤.
   document.querySelectorAll("[data-draghandle]").forEach((handle) => {
-    let pressTimer = null, pending = null;
-    const clearPending = () => { if (pressTimer) clearTimeout(pressTimer); pressTimer=null; pending=null; };
-    handle.onpointerdown = (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      const row=handle.closest("[data-sortrow]");
-      if (!row) return;
-      pending={row,pointerId:e.pointerId,x:e.clientX,y:e.clientY};
-      pressTimer=setTimeout(() => {
-        if (!pending || pending.pointerId !== e.pointerId) return;
-        dragState={row,pointerId:e.pointerId};
-        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
-        row.style.opacity="0.72"; row.style.transform="scale(1.015)"; row.style.background="#252B35";
-        try { if (navigator.vibrate) navigator.vibrate(45); } catch (_) {}
-        pressTimer=null;
-      },500);
-    };
-    handle.onpointermove = (e) => {
-      if (pending && !dragState && pending.pointerId===e.pointerId) {
-        if (Math.hypot(e.clientX-pending.x,e.clientY-pending.y)>10) clearPending();
+    let pending=null, dragging=null, timer=null;
+    const resetVisual=()=>{ if(dragging){dragging.row.style.opacity="";dragging.row.style.transform="";dragging.row.style.background="";} };
+    const detach=()=>{document.removeEventListener("pointermove",onMove,true);document.removeEventListener("pointerup",onUp,true);document.removeEventListener("pointercancel",onCancel,true);};
+    const cleanup=()=>{if(timer)clearTimeout(timer);timer=null;pending=null;resetVisual();dragging=null;detach();};
+
+    function onMove(e){
+      if(pending && !dragging){
+        if(Math.hypot(e.clientX-pending.x,e.clientY-pending.y)>12) cleanup();
         return;
       }
-      if (!dragState || dragState.pointerId!==e.pointerId) return;
+      if(!dragging || e.pointerId!==dragging.pointerId) return;
       e.preventDefault();
       const rows=[...document.querySelectorAll("[data-sortrow]")];
       const over=rows.find(r=>{const b=r.getBoundingClientRect();return e.clientY>=b.top&&e.clientY<=b.bottom;});
-      if (!over || over===dragState.row) return;
+      if(!over || over===dragging.row) return;
       const b=over.getBoundingClientRect();
-      if (e.clientY<b.top+b.height/2) over.before(dragState.row); else over.after(dragState.row);
-    };
-    handle.onpointerup = (e) => {
-      if (pending && !dragState) { clearPending(); return; }
-      if (!dragState || dragState.pointerId!==e.pointerId) return;
+      if(e.clientY<b.top+b.height/2) over.before(dragging.row); else over.after(dragging.row);
+    }
+    function onUp(e){
+      if(!dragging || e.pointerId!==dragging.pointerId){cleanup();return;}
+      e.preventDefault();
       const next=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
       const wk=weekdayKey(); state.order={...state.order,[wk]:next}; lsSet("wt_exercise_order",state.order);
-      dragState.row.style.opacity=""; dragState.row.style.transform=""; dragState.row.style.background="";
-      dragState=null; clearPending();
-      try { if (navigator.vibrate) navigator.vibrate(45); } catch (_) {}
-    };
-    handle.onpointercancel = () => {
-      if (dragState) { dragState.row.style.opacity=""; dragState.row.style.transform=""; dragState.row.style.background=""; }
-      dragState=null; clearPending();
+      try{if(navigator.vibrate)navigator.vibrate(45);}catch(_){}
+      cleanup();
+    }
+    function onCancel(){cleanup();}
+
+    handle.onpointerdown=(e)=>{
+      if(e.pointerType==="mouse"&&e.button!==0)return;
+      const row=handle.closest("[data-sortrow]"); if(!row)return;
+      pending={pointerId:e.pointerId,x:e.clientX,y:e.clientY,row};
+      document.addEventListener("pointermove",onMove,{capture:true,passive:false});
+      document.addEventListener("pointerup",onUp,{capture:true,passive:false});
+      document.addEventListener("pointercancel",onCancel,{capture:true,passive:false});
+      timer=setTimeout(()=>{
+        if(!pending)return;
+        dragging={pointerId:pending.pointerId,row:pending.row}; pending=null; timer=null;
+        dragging.row.style.opacity="0.72";dragging.row.style.transform="scale(1.015)";dragging.row.style.background="#252B35";
+        try{if(navigator.vibrate)navigator.vibrate(45);}catch(_){}
+      },450);
     };
   });
 

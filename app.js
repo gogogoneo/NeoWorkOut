@@ -245,6 +245,7 @@ const state = {
   voiceEnabled: lsGet("wt_voice_enabled", true),
   selection: lsGet("wt_exercise_selection", {}), // { [dayType]: { [exId]: boolean } }
   selectionOpen: false,
+  reorderMode: false,
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
   cardioSelection: lsGet("wt_cardio_selection", {}), // { [dayType]: { [optionKey]: boolean } }
   cardioConfig: lsGet("wt_cardio_config", {}), // weekday-scoped cardio fields
@@ -1583,7 +1584,11 @@ function dayHTML() {
         state.selectionOpen
           ? `<div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
               ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${getCardioName(opt)}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
-              ${allExercises
+              ${state.reorderMode
+  ? `<button data-reorderdone style="width:100%;margin:4px 0 10px;padding:11px 12px;border:1px solid #58A6FF;border-radius:10px;background:#18324A;color:#DCEEFF;font-weight:800">✓ 순서 변경 완료</button>
+     <div style="font-size:12px;color:#8A93A3;margin:-3px 2px 9px">≡를 잡고 원하는 위치로 이동하세요. 이 모드에서는 목록 스크롤보다 순서 이동이 우선됩니다.</div>`
+  : `<button data-reorderstart style="width:100%;margin:4px 0 10px;padding:11px 12px;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#ECEEF2;font-weight:800">↕ 순서 변경</button>`}
+${allExercises
                 .map((ex, idx) => {
                   const checked = isSelected(dayType, ex.id);
                   return `<div data-sortrow="${ex.id}" style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #262B34">
@@ -1594,7 +1599,7 @@ function dayHTML() {
                           <div style="font-size:12px;color:#8A93A3;margin-top:2px">${buildSummary(ex)}</div>
                         </div>
                       </label>
-                      <button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 이동" style="width:42px;height:38px;flex-shrink:0;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#B8BFC9;font-size:22px;line-height:1;touch-action:pan-y;cursor:grab">≡</button>
+                      ${state.reorderMode ? `<button data-draghandle="${ex.id}" aria-label="${getExDisplay(ex).name} 순서 이동" style="width:42px;height:38px;flex-shrink:0;border:1px solid #545C6B;border-radius:10px;background:#1E222A;color:#B8BFC9;font-size:22px;line-height:1;touch-action:none;cursor:grab">≡</button>` : ""}
                     </div>`;
                 })
                 .join("")}
@@ -2241,6 +2246,7 @@ function attachHandlers() {
   if (selToggleEl) {
     selToggleEl.onclick = () => {
       state.selectionOpen = !state.selectionOpen;
+      if (!state.selectionOpen) state.reorderMode = false;
       const opening = state.selectionOpen;
       render();
       if (opening) requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -2268,52 +2274,59 @@ function attachHandlers() {
 
   const copyBtn=document.querySelector("[data-copysettings]");
   if(copyBtn) copyBtn.onclick=()=>{ const targets=[...document.querySelectorAll("[data-copytarget]:checked")].map(x=>x.getAttribute("data-copytarget")); if(!targets.length){ alert("복사할 요일을 선택하세요."); return; } if(confirm(`${weekdayKey()}요일 설정을 ${targets.join(", ")}요일에 덮어쓸까요?`)){ copyWeekdaySettings(weekdayKey(),targets); render(); } };
-  // v62: 0.45초 롱프레스 후에만 이동. 그 전 움직임은 일반 스크롤.
-  document.querySelectorAll("[data-draghandle]").forEach((handle) => {
-    let pending=null, dragging=null, timer=null;
-    const resetVisual=()=>{ if(dragging){dragging.row.style.opacity="";dragging.row.style.transform="";dragging.row.style.background="";} };
-    const detach=()=>{document.removeEventListener("pointermove",onMove,true);document.removeEventListener("pointerup",onUp,true);document.removeEventListener("pointercancel",onCancel,true);};
-    const cleanup=()=>{if(timer)clearTimeout(timer);timer=null;pending=null;resetVisual();dragging=null;detach();};
-
-    function onMove(e){
-      if(pending && !dragging){
-        if(Math.hypot(e.clientX-pending.x,e.clientY-pending.y)>12) cleanup();
-        return;
-      }
-      if(!dragging || e.pointerId!==dragging.pointerId) return;
-      e.preventDefault();
-      const rows=[...document.querySelectorAll("[data-sortrow]")];
-      const over=rows.find(r=>{const b=r.getBoundingClientRect();return e.clientY>=b.top&&e.clientY<=b.bottom;});
-      if(!over || over===dragging.row) return;
-      const b=over.getBoundingClientRect();
-      if(e.clientY<b.top+b.height/2) over.before(dragging.row); else over.after(dragging.row);
-    }
-    function onUp(e){
-      if(!dragging || e.pointerId!==dragging.pointerId){cleanup();return;}
-      e.preventDefault();
-      const next=[...document.querySelectorAll("[data-sortrow]")].map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
-      const wk=weekdayKey(); state.order={...state.order,[wk]:next}; lsSet("wt_exercise_order",state.order);
-      try{if(navigator.vibrate)navigator.vibrate(45);}catch(_){}
-      cleanup();
-    }
-    function onCancel(){cleanup();}
-
-    handle.onpointerdown=(e)=>{
-      if(e.pointerType==="mouse"&&e.button!==0)return;
-      const row=handle.closest("[data-sortrow]"); if(!row)return;
-      pending={pointerId:e.pointerId,x:e.clientX,y:e.clientY,row};
-      document.addEventListener("pointermove",onMove,{capture:true,passive:false});
-      document.addEventListener("pointerup",onUp,{capture:true,passive:false});
-      document.addEventListener("pointercancel",onCancel,{capture:true,passive:false});
-      timer=setTimeout(()=>{
-        if(!pending)return;
-        dragging={pointerId:pending.pointerId,row:pending.row}; pending=null; timer=null;
-        dragging.row.style.opacity="0.72";dragging.row.style.transform="scale(1.015)";dragging.row.style.background="#252B35";
-        try{if(navigator.vibrate)navigator.vibrate(45);}catch(_){}
-      },450);
-    };
+  document.querySelectorAll("[data-reorderstart]").forEach((el) => {
+    el.onclick = () => { state.reorderMode = true; render(); };
+  });
+  document.querySelectorAll("[data-reorderdone]").forEach((el) => {
+    el.onclick = () => { state.reorderMode = false; render(); };
   });
 
+  // v63: 순서 변경 모드에서만 ≡ 핸들 드래그가 활성화됩니다.
+  let dragState = null;
+  document.querySelectorAll("[data-draghandle]").forEach((handle) => {
+    handle.onpointerdown = (e) => {
+      e.preventDefault();
+      const exId = handle.getAttribute("data-draghandle");
+      const row = handle.closest("[data-sortrow]");
+      if (!row) return;
+      dragState = { exId, row, pointerId:e.pointerId };
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      row.style.opacity = "0.72";
+      row.style.transform = "scale(1.015)";
+      row.style.background = "#252B35";
+      if (navigator.vibrate) { try { navigator.vibrate(35); } catch (_) {} }
+    };
+    handle.onpointermove = (e) => {
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      const rows = [...document.querySelectorAll("[data-sortrow]")];
+      const over = rows.find(r => {
+        const b=r.getBoundingClientRect();
+        return e.clientY >= b.top && e.clientY <= b.bottom;
+      });
+      if (!over || over === dragState.row) return;
+      const b=over.getBoundingClientRect();
+      if (e.clientY < b.top + b.height/2) over.before(dragState.row);
+      else over.after(dragState.row);
+    };
+    const finishDrag = (e) => {
+      if (!dragState || dragState.pointerId !== e.pointerId) return;
+      const rows=[...document.querySelectorAll("[data-sortrow]")];
+      const next=rows.map(r=>r.getAttribute("data-sortrow")).filter(Boolean);
+      const wk=weekdayKey();
+      state.order={...state.order,[wk]:next};
+      lsSet("wt_exercise_order",state.order);
+      dragState.row.style.opacity="";
+      dragState.row.style.transform="";
+      dragState.row.style.background="";
+      try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+      dragState=null;
+      if (navigator.vibrate) { try { navigator.vibrate(45); } catch (_) {} }
+    };
+    handle.onpointerup=finishDrag;
+    handle.onpointercancel=finishDrag;
+  });
+
+  // v45: 텍스트 편집창 Enter=다음, 마지막=완료. textarea 줄바꿈은 Shift+Enter.
   document.querySelectorAll("[data-tipfield]").forEach((el)=>{
     el.addEventListener("keydown",(e)=>{
       if(e.key!=="Enter" || e.isComposing) return;

@@ -1258,11 +1258,17 @@ function render() {
   const app = document.getElementById("app");
   app.innerHTML = state.view === "calendar" ? calendarHTML() : dayHTML();
   attachHandlers();
+  if (state.view === "day") {
+    const currentSession = getWorkoutSession();
+    state.sessionStart = currentSession?.start && !currentSession?.end ? currentSession.start : null;
+  }
   if (state.view === "day" && state.sessionStart) {
     clearInterval(state.elapsedHandle);
     const elapsed = () => {
       const el = document.getElementById("elapsedDisplay");
       if (el && state.sessionStart) el.textContent = formatTime(Math.floor((Date.now() - state.sessionStart) / 1000));
+      const autoEl = document.getElementById("weightElapsedDisplay");
+      if (autoEl && state.sessionStart) autoEl.textContent = formatTime(Math.floor((Date.now() - state.sessionStart) / 1000));
     };
     elapsed();
     state.elapsedHandle = setInterval(elapsed, 1000);
@@ -1736,7 +1742,7 @@ ${allExercises
           const done = !!(ws && ws.start && ws.end);
           const running = !!(ws && ws.start && !ws.end);
           return `<div class="card" style="margin-top:10px;padding:11px 12px;font-size:12px;color:#8A93A3">
-            ${done ? `자동 기록 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.durationText || `${ws.minutes || 0}분`}</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `웨이트 시작 ${formatClockMs(ws.start)} · 마지막 웨이트 종료 후 유산소 설정 시간을 더해 자동 기록` : "첫 웨이트 시작 시 자동 기록 · 마지막 웨이트 종료 + 설정된 유산소 시간"}
+            ${done ? `자동 기록 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.durationText || `${ws.minutes || 0}분`}</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `웨이트 시작 ${formatClockMs(ws.start)} · 진행 중 <b id="weightElapsedDisplay" style="color:#F5C518">${formatTime(Math.floor((Date.now() - ws.start) / 1000))}</b> · 완료 시 유산소 설정 시간 합산` : "첫 웨이트 시작 시 자동 기록 · 마지막 웨이트 종료 + 설정된 유산소 시간"}
           </div>`;
         })() : ""}
         ${progressHTML}
@@ -1814,6 +1820,7 @@ function markSetComplete(exId, setIdx) {
   const dayType = getDayType(state.selectedDate);
   const totalSets = EXERCISES[dayType].filter((ex) => isSelected(dayType, ex.id)).reduce((a, ex) => a + getConfig(ex).sets.length, 0);
   const doneSets = Object.values(state.completed).filter(Boolean).length;
+  recordWeightCompletion();
   updateSummary(state.selectedDate);
 }
 
@@ -2001,7 +2008,7 @@ function skipActiveTimer() {
 }
 
 function startExercise(ex) {
-  // 전체 운동 시간은 상단 운동 시작 버튼으로만 기록
+  beginWeightSession();
   state.queue = null;
   const setCount = getConfig(ex).sets.length;
   let idx = 0;
@@ -2018,7 +2025,7 @@ function startExercise(ex) {
 
 function startBlock(list) {
   if (!list.length) return;
-  // 전체 운동 시간은 상단 운동 시작 버튼으로만 기록
+  beginWeightSession();
   const first = list[0];
   const restIds = list.slice(1).map((e) => e.id);
   const setCount = getConfig(first).sets.length;

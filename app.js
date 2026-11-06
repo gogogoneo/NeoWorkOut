@@ -1209,43 +1209,47 @@ function getSelectedWorkoutForDate(dateStr = state.selectedDate) {
   const cardioOpt = opts.find((o) => o.key === getCardioChoice(dayType)) || opts[0] || null;
   return { dayType, exercises, cardioOpt };
 }
-function startWholeWorkout() {
+function getConfiguredCardioSeconds(dateStr = state.selectedDate) {
+  const { dayType, cardioOpt } = getSelectedWorkoutForDate(dateStr);
+  return cardioOpt ? cardioOpt.phases.reduce((sum, phase) =>
+    sum + getCardioDurationSeconds(dayType, cardioOpt.key, phase), 0) : 0;
+}
+function beginWeightSession() {
+  const old = getWorkoutSession();
+  if (old && old.start) return;
   const now = Date.now();
-  state.workoutSessions[state.selectedDate] = { start: now, end: null, minutes: null, calories: null };
+  state.workoutSessions[state.selectedDate] = { start: now, end: null, weightEnd: null };
   lsSet("wt_workout_sessions", state.workoutSessions);
   state.sessionStart = now;
-  render();
 }
-function finishWholeWorkout() {
+function recordWeightCompletion() {
   const rec = getWorkoutSession();
-  if (!rec || !rec.start) return;
-  const end = Date.now();
+  if (!rec || !rec.start || rec.weightEnd) return;
+  const { dayType, exercises, cardioOpt } = getSelectedWorkoutForDate();
+  if (!exercises.length || !exercises.every(ex =>
+    getConfig(ex).sets.every((_, i) => !!state.completed[`${ex.id}-${i}`]))) return;
+  const weightEnd = Date.now();
+  const cardioSeconds = getConfiguredCardioSeconds();
+  const end = weightEnd + cardioSeconds * 1000;
   const elapsedSeconds = Math.max(0, Math.round((end - rec.start) / 1000));
   const minutes = Math.floor(elapsedSeconds / 60);
   const durationText = elapsedSeconds < 60 ? `${elapsedSeconds}초` : `${minutes}분`;
-  const w = getSelectedWorkoutForDate();
-  const est = estimateWorkout(w.dayType, w.exercises, w.cardioOpt);
-  const calories = est.calories;
-  state.workoutSessions[state.selectedDate] = { start: rec.start, end, minutes, elapsedSeconds, durationText, calories };
+  const est = estimateWorkout(dayType, exercises, cardioOpt);
+  const result = { start: rec.start, weightEnd, end, minutes, elapsedSeconds,
+    durationText, calories: est.calories, cardioSeconds, automatic: true };
+  state.workoutSessions[state.selectedDate] = result;
   lsSet("wt_workout_sessions", state.workoutSessions);
-  state.summary[state.selectedDate] = { calories, minutes, elapsedSeconds, durationText, start: rec.start, end };
+  state.summary[state.selectedDate] = { ...result };
   lsSet("wt_summary", state.summary);
   state.sessionStart = null;
   clearInterval(state.elapsedHandle);
-  render();
-  setTimeout(() => alert(`오늘 운동 완료\n${formatClockMs(rec.start)} → ${formatClockMs(end)}\n총 ${durationText} · 예상 ${calories}kcal`), 0);
 }
-
 function updateSummary(dateStr) {
-  // 호출 시점은 항상 현재 선택 날짜. 웨이트와 선택 유산소가 모두 끝났을 때만 달력에 기록한다.
-  const status = getCurrentDayCompletion();
-  if (status.complete) {
-    const dt = getDayType(dateStr);
-    const est = estimateWorkout(dt, status.exercises, status.cardioOpt);
-    state.summary[dateStr] = { calories: est.calories, minutes: est.minutes };
-  } else {
-    const session = getWorkoutSession(dateStr);
-    if (!(session && session.end)) delete state.summary[dateStr];
+  const rec = getWorkoutSession(dateStr);
+  if (rec && rec.automatic && rec.end) {
+    state.summary[dateStr] = { ...rec };
+  } else if (!(rec && rec.end)) {
+    delete state.summary[dateStr];
   }
   lsSet("wt_summary", state.summary);
 }
@@ -1729,13 +1733,10 @@ ${allExercises
         </div>
         ${dayType !== "rest" ? (() => {
           const ws = getWorkoutSession();
-          const running = !!(ws && ws.start && !ws.end);
           const done = !!(ws && ws.start && ws.end);
-          return `<div class="card" style="margin-top:10px;padding:11px 12px">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="font-size:12px;color:#8A93A3">${done ? `실제 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.durationText || `${ws.minutes || 0}분`}</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `시작 ${formatClockMs(ws.start)} · 운동 진행 중` : "전체 운동 시간을 실제로 기록합니다."}</div>
-              ${running ? `<button id="finishWholeWorkout" style="white-space:nowrap;background:#B64B4B;border:none;border-radius:8px;padding:9px 12px;color:white;font-weight:700">■ 운동 종료</button>` : `<button id="startWholeWorkout" style="white-space:nowrap;background:#4CAF7D;border:none;border-radius:8px;padding:9px 12px;color:#14161A;font-weight:700">${done ? "▶ 다시 시작" : "▶ 운동 시작"}</button>`}
-            </div>
+          const running = !!(ws && ws.start && !ws.end);
+          return `<div class="card" style="margin-top:10px;padding:11px 12px;font-size:12px;color:#8A93A3">
+            ${done ? `자동 기록 ${formatClockMs(ws.start)} → ${formatClockMs(ws.end)} · <b style="color:#ECEEF2">${ws.durationText || `${ws.minutes || 0}분`}</b> · <b style="color:#F5C518">${ws.calories}kcal</b>` : running ? `웨이트 시작 ${formatClockMs(ws.start)} · 마지막 웨이트 종료 후 유산소 설정 시간을 더해 자동 기록` : "첫 웨이트 시작 시 자동 기록 · 마지막 웨이트 종료 + 설정된 유산소 시간"}
           </div>`;
         })() : ""}
         ${progressHTML}
@@ -2163,17 +2164,6 @@ function attachHandlers() {
   };
 
   document.getElementById("toggleVoice").onclick = toggleVoice;
-  const startWholeBtn = document.getElementById("startWholeWorkout");
-  if (startWholeBtn) startWholeBtn.onclick = () => {
-    const old = getWorkoutSession();
-    if (old && old.end && !confirm("기존 운동 시간 기록을 지우고 다시 시작할까요?")) return;
-    startWholeWorkout();
-  };
-  const finishWholeBtn = document.getElementById("finishWholeWorkout");
-  if (finishWholeBtn) finishWholeBtn.onclick = () => {
-    if (confirm("전체 운동을 종료하고 시간과 칼로리를 기록할까요?")) finishWholeWorkout();
-  };
-
   document.getElementById("resetDay").onclick = () => {
     state.completed = {};
     saveProgress();

@@ -29,7 +29,7 @@ const EXERCISES = {
     { id: "incline", name: "인클라인 프레스", unit: "kg", tip: "벤치를 약 30도로 세우고 덤벨을 가슴 윗부분 옆으로 천천히 내렸다가 위로 밀어올리세요. 어깨가 들리지 않게 견갑을 고정하고 가슴 상부 수축에 집중합니다.", breath: "밀어올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"인클라인 푸시업",unit:"bodyweight",tip:"손을 벤치에 올리고 몸을 일직선으로 유지하며 가슴을 벤치 쪽으로 내렸다가 밀어올리세요.",breath:"밀 때 내쉬고, 내릴 때 들이쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 10, reps: 12, rest: 90 }, { value: 12, reps: 12, rest: 90 }, { value: 12, reps: 10, rest: 90 }
     ] },
-    { id: "flye", name: "덤벨 플라이", unit: "kg", tip: "평벤치에 누워 팔꿈치를 살짝 굽힌 채 고정하고 양팔을 큰 아치로 벌렸다가 가슴 앞에서 모으세요. 무게보다 가슴의 스트레칭과 수축을 우선합니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"와이드 푸시업",unit:"bodyweight",tip:"손 간격을 어깨보다 넓게 잡고 가슴이 충분히 늘어나는 범위까지 천천히 내려갔다 밀어올리세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
+    { id: "flye", name: "펙덱 플라이", unit: "kg", tip: "머신에 앉아 등을 등받이에 붙이고 손잡이를 가슴 높이에 맞추세요. 팔꿈치를 약간 굽힌 채 양팔을 가슴 앞으로 모으고, 어깨가 과도하게 뒤로 젖혀지지 않는 범위에서 천천히 벌립니다.", breath: "벌릴 때 들이쉬고, 모을 때 내쉬세요", substitutes: [{name:"와이드 푸시업",unit:"bodyweight",tip:"손 간격을 어깨보다 넓게 잡고 가슴이 충분히 늘어나는 범위까지 천천히 내려갔다 밀어올리세요.",breath:"내릴 때 들이쉬고, 밀 때 내쉬세요",sets:[{value:null,reps:15,rest:60},{value:null,reps:15,rest:60},{value:null,reps:12,rest:60}]}], sets: [
       { value: 8, reps: 12, rest: 60 }, { value: 10, reps: 12, rest: 60 }, { value: 10, reps: 10, rest: 60 }
     ] },
 
@@ -49,7 +49,7 @@ const EXERCISES = {
     { id: "legpress", name: "레그프레스", unit: "kg", tip: "발을 발판 중앙에 어깨너비 정도로 두고 무릎과 발끝 방향을 맞춥니다. 무릎을 완전히 잠그지 않고 허리가 뜨지 않는 깊이까지만 내려갑니다.", breath: "밀어낼 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [{name:"맨몸 스쿼트",unit:"bodyweight",tip:"무릎과 발끝 방향을 맞추고 엉덩이를 뒤로 보내며 앉았다 일어서세요.",breath:"일어설 때 내쉬고, 앉을 때 들이쉬세요",sets:[{value:null,reps:20,rest:60},{value:null,reps:20,rest:60},{value:null,reps:15,rest:60}]}], sets: [
       { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }, { value: 50, reps: 12, rest: 90 }
     ] },
-    { id: "rdl", name: "RDL", unit: "kg", tip: "무릎은 살짝 굽힌 상태로 고정하고 엉덩이를 뒤로 최대한 밀며 덤벨을 다리에 가깝게 내려갑니다. 허리는 중립을 유지하고 햄스트링이 충분히 늘어나는 지점까지만 내려간 뒤, 엉덩이를 앞으로 밀며 둔근을 수축해 일어섭니다.", breath: "내려갈 때 들이쉬며 복압을 잡고, 일어설 때 내쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
+    { id: "rdl", name: "바벨 RDL", unit: "kg", tip: "무릎은 살짝 굽힌 상태로 고정하고 엉덩이를 뒤로 최대한 밀며 바벨을 다리에 가깝게 내려갑니다. 허리는 중립을 유지하고 햄스트링이 충분히 늘어나는 지점까지만 내려간 뒤, 엉덩이를 앞으로 밀며 둔근을 수축해 일어섭니다.", breath: "내려갈 때 들이쉬며 복압을 잡고, 일어설 때 내쉬세요", substitutes: [{name:"싱글레그 데드리프트(맨몸)",unit:"bodyweight",tip:"균형을 잡으며 엉덩이를 뒤로 보내고 허리를 중립으로 유지하세요.",breath:"일어설 때 내쉬고, 내려갈 때 들이쉬세요",sets:[{value:null,reps:12,rest:60},{value:null,reps:12,rest:60},{value:null,reps:10,rest:60}]}], sets: [
       { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 12, rest: 90 }, { value: 18, reps: 10, rest: 90 }
     ] },
     { id: "legextension", name: "레그 익스텐션", unit: "kg", tip: "등과 엉덩이를 패드에 붙이고 무릎 축을 기구 회전축에 맞춥니다. 반동 없이 무릎을 펴 허벅지 앞쪽을 수축하고, 무릎을 세게 잠그지 않은 채 천천히 내려옵니다.", breath: "다리를 펼 때 내쉬고, 천천히 굽힐 때 들이쉬세요", substitutes: [], sets: [
@@ -249,6 +249,7 @@ const state = {
   cardioChoice: lsGet("wt_cardio_choice", {}), // { [dayType]: optionKey }
   cardioSelection: lsGet("wt_cardio_selection", {}), // { [dayType]: { [optionKey]: boolean } }
   cardioConfig: lsGet("wt_cardio_config", {}), // weekday-scoped cardio fields
+  cardioPhaseEdits: lsGet("wt_cardio_phase_edits_v66", {}),
   cardioNames: lsGet("wt_cardio_names", {}), // { "요일:optionKey": custom name }
   cardioEditOpen: {}, // { "dayType:optionKey": boolean }
   tipOverrides: lsGet("wt_exercise_tip_overrides", {}), // { "exId" or "exId:sub": { name, tip, breath } }
@@ -578,7 +579,7 @@ function toggleCardioSelection(dayType, optionKey) {
   };
   state.cardioSelection = next;
   lsSet("wt_cardio_selection", next);
-  const selected = (CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key));
+  const selected = getDayCardioOptions(dayType).filter((o) => isCardioSelected(dayType, o.key));
   if (selected.length && !selected.some((o) => o.key === getCardioChoice(dayType))) {
     setCardioChoiceFor(dayType, selected[0].key);
   }
@@ -590,7 +591,7 @@ function cardioChoiceStorageKey(dayType) {
 }
 
 function getCardioChoice(dayType) {
-  const options = CARDIO_OPTIONS[dayType] || [];
+  const options = getDayCardioOptions(dayType);
   if (!options.length) return null;
   const storageKey = cardioChoiceStorageKey(dayType);
   if (state.cardioChoice[storageKey]) return state.cardioChoice[storageKey];
@@ -642,6 +643,36 @@ function updateCardioField(dayType, optionKey, phaseKey, fieldName, rawValue) {
   render();
 }
 
+// v66: 요일별 유산소 프로그램의 단계 구성 저장 (기본 프로그램은 보존)
+function cardioPhaseEditKey(optionKey) { return `${weekdayKey()}:${optionKey}`; }
+function getDayCardioOptions(dayType) {
+  return (CARDIO_OPTIONS[dayType] || []).map(opt => {
+    const edited = state.cardioPhaseEdits[cardioPhaseEditKey(opt.key)];
+    return { ...opt, phases: Array.isArray(edited) ? edited : opt.phases };
+  });
+}
+function saveCardioPhases(optionKey, phases) {
+  state.cardioPhaseEdits = { ...state.cardioPhaseEdits, [cardioPhaseEditKey(optionKey)]: phases };
+  lsSet("wt_cardio_phase_edits_v66", state.cardioPhaseEdits);
+  render();
+}
+function removeCardioPhase(optionKey, phaseKey) {
+  const opt = getDayCardioOptions(getDayType(state.selectedDate)).find(o=>o.key===optionKey);
+  if (!opt || opt.phases.length <= 1) return alert("최소 한 단계는 남겨야 합니다.");
+  saveCardioPhases(optionKey, opt.phases.filter(p=>p.key!==phaseKey));
+}
+function addCardioPhase(optionKey, type) {
+  const opt = getDayCardioOptions(getDayType(state.selectedDate)).find(o=>o.key===optionKey);
+  if (!opt) return;
+  const key = `custom_${Date.now()}`;
+  const phase = type === "stairs" ? {key,label:"스텝밀",type:"stairs",seconds:1800,fields:{level:5}} : {key,label:"트레드밀",type:"treadmill",seconds:1800,fields:{incline:5,speed:5.5}};
+  saveCardioPhases(optionKey,[...opt.phases,phase]);
+}
+function updateCardioPhaseLabel(optionKey,phaseKey,value) {
+  const opt = getDayCardioOptions(getDayType(state.selectedDate)).find(o=>o.key===optionKey);
+  if (!opt) return;
+  saveCardioPhases(optionKey,opt.phases.map(p=>p.key===phaseKey?{...p,label:String(value).trim()||p.label}:p));
+}
 function cardioNameKey(optionKey) { return `${weekdayKey()}:${optionKey}`; }
 function getCardioName(opt) { return state.cardioNames[cardioNameKey(opt.key)] || opt.label; }
 function saveCardioName(optionKey, name) {
@@ -1186,7 +1217,7 @@ function getCurrentDayCompletion() {
   if (dayType === "rest") return { complete: false, exercises: [], cardioOpt: null };
   const exercises = getOrderedExercises(dayType).filter((ex) => isSelected(dayType, ex.id));
   const allSetsDone = exercises.every((ex) => getEffectiveSets(ex, getConfig(ex)).every((_, idx) => !!state.completed[`${ex.id}-${idx}`]));
-  const cardioOptions = (CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key));
+  const cardioOptions = getDayCardioOptions(dayType).filter((o) => isCardioSelected(dayType, o.key));
   const cardioOpt = cardioOptions.find((o) => o.key === getCardioChoice(dayType)) || cardioOptions[0] || null;
   const cardioDone = !cardioOpt || !!state.completed.cardio;
   return { complete: exercises.length > 0 && allSetsDone && cardioDone, exercises, cardioOpt };
@@ -1205,7 +1236,7 @@ function getSelectedWorkoutForDate(dateStr = state.selectedDate) {
   const dayType = getDayType(dateStr);
   if (dayType === "rest") return { dayType, exercises: [], cardioOpt: null };
   const exercises = getOrderedExercises(dayType).filter((ex) => isSelected(dayType, ex.id));
-  const opts = (CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key));
+  const opts = getDayCardioOptions(dayType).filter((o) => isCardioSelected(dayType, o.key));
   const cardioOpt = opts.find((o) => o.key === getCardioChoice(dayType)) || opts[0] || null;
   return { dayType, exercises, cardioOpt };
 }
@@ -1586,14 +1617,14 @@ function dayHTML() {
       <div data-toggleselection style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer">
         <div style="font-size:14px;font-weight:800;color:#F5C518">운동 선택 · 순서 편집</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:12px;color:#8A93A3">웨이트·코어 ${exercises.length}/${allExercises.length} · 유산소 ${(CARDIO_OPTIONS[dayType] || []).filter((o) => isCardioSelected(dayType, o.key)).length}/${(CARDIO_OPTIONS[dayType] || []).length}</span>
+          <span style="font-size:12px;color:#8A93A3">웨이트·코어 ${exercises.length}/${allExercises.length} · 유산소 ${getDayCardioOptions(dayType).filter((o) => isCardioSelected(dayType, o.key)).length}/${getDayCardioOptions(dayType).length}</span>
           <span style="color:#8A93A3">${state.selectionOpen ? "⌃" : "⌄"}</span>
         </div>
       </div>
       ${
         state.selectionOpen
           ? `<div style="padding:0 14px 12px;display:flex;flex-direction:column;gap:8px">
-              ${(CARDIO_OPTIONS[dayType] || []).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${(CARDIO_OPTIONS[dayType] || []).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${getCardioName(opt)}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
+              ${getDayCardioOptions(dayType).length ? `<div style="margin:2px 0 4px;padding:10px 0;border-bottom:1px solid #3A3F49;font-size:13px;font-weight:800;color:#3E8FB0">유산소 운동 선택</div>${getDayCardioOptions(dayType).map((opt) => { const checked = isCardioSelected(dayType, opt.key); return `<label data-togglecardiosel="${opt.key}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 0;border-bottom:1px solid #262B34"><div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:${checked ? "none" : "1px solid #545C6B"};background:${checked ? "#3E8FB0" : "transparent"};display:flex;align-items:center;justify-content:center">${checked ? '<span style="color:#14161A;font-size:12px">✓</span>' : ""}</div><div style="font-size:14px;font-weight:700;color:${checked ? "#ECEEF2" : "#8A93A3"}">${getCardioName(opt)}</div></label>`; }).join("")}<div style="margin:10px 0 2px;font-size:13px;font-weight:800;color:#4CAF7D">웨이트 · 코어 운동 선택</div>` : ""}
               ${state.reorderMode
   ? `<button data-reorderdone style="width:100%;margin:4px 0 10px;padding:11px 12px;border:1px solid #58A6FF;border-radius:10px;background:#18324A;color:#DCEEFF;font-weight:800">✓ 순서 변경 완료</button>
      <div style="font-size:12px;color:#8A93A3;margin:-3px 2px 9px">≡를 잡고 원하는 위치로 이동하세요. 이 모드에서는 목록 스크롤보다 순서 이동이 우선됩니다.</div>`
@@ -1623,7 +1654,7 @@ ${allExercises
       }
     </div>` : "";
 
-  const allCardioOptions = CARDIO_OPTIONS[dayType] || [];
+  const allCardioOptions = getDayCardioOptions(dayType);
   const cardioOptions = allCardioOptions.filter((o) => isCardioSelected(dayType, o.key));
   const cardioChoiceKey = cardioOptions.length ? getCardioChoice(dayType) : null;
   const activeCardioOption = cardioOptions.length ? (cardioOptions.find((o) => o.key === cardioChoiceKey) || cardioOptions[0]) : null;
@@ -1663,7 +1694,11 @@ ${allExercises
     } else if (phaseType === "stairs") {
       inputs = isMain ? inp("고강도 레벨", "highLevel", fields.highLevel) + inp("저강도 레벨", "lowLevel", fields.lowLevel) : inp("레벨", "level", fields.level);
     }
-    return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">${durationInput}${inputs}</div>`;
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 4px 0">
+      <label style="font-size:11px;color:#8A93A3">단계 이름<input data-phase-label="${cardioChoiceKey}|${phase.key}" value="${escapeHTML(phase.label)}" style="${cardioFieldStyle};width:130px" /></label>
+      ${durationInput}${inputs}
+      <button data-removephase="${cardioChoiceKey}|${phase.key}" style="border:1px solid #AD5353;background:#352427;color:#F3B8B8;border-radius:7px;padding:6px 9px">− 단계 삭제</button>
+      </div>`;
   };
 
   const cardioDayOverviewHTML = (dayType === "lower" || dayType === "upper") ? `<div class="card" style="overflow:hidden">
@@ -1692,7 +1727,7 @@ ${allExercises
           .map((p) => {
             const fields = getCardioFields(dayType, cardioChoiceKey, p);
             const phaseType = p.type || cardioType;
-            const isMain = p.key === "main" || fields.highIncline != null || fields.highLevel != null || fields.highWatts != null;
+            const isMain = fields.highIncline != null || fields.highLevel != null || fields.highWatts != null;
             const detail = buildCardioDetail(phaseType, fields, isMain);
             return `<div>
               <button data-cardio="${p.key}" style="display:flex;justify-content:space-between;align-items:center;background:#262B34;border:1px solid #333944;border-radius:8px;padding:10px 12px;color:#ECEEF2;cursor:pointer;text-align:left;width:100%">
@@ -1707,6 +1742,10 @@ ${allExercises
           })
           .join("")}
       </div>
+      ${isCardioEditOpen ? `<div style="display:flex;gap:8px;margin-top:10px">
+        <button data-addphase="${cardioChoiceKey}|treadmill" style="flex:1;background:#263744;color:#C6E6FF;border:1px solid #3E8FB0;border-radius:8px;padding:10px">+ 트레드밀 추가</button>
+        <button data-addphase="${cardioChoiceKey}|stairs" style="flex:1;background:#263744;color:#C6E6FF;border:1px solid #3E8FB0;border-radius:8px;padding:10px">+ 스텝밀 추가</button>
+      </div>` : ""}
       <button data-startcardio="all" style="width:100%;margin-top:12px;background:#3E8FB0;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;color:#14161A;cursor:pointer">▶ ${getCardioName(activeCardioOption)} 전체 자동 진행</button>
       ${state.completed.cardio ? '<div style="margin-top:10px;color:#4CAF7D;font-size:13px;font-weight:700">✓ 오늘 유산소 완료</div>' : ''}
     </div>` : dayType === "rest" ? `
@@ -1940,7 +1979,7 @@ function finishActiveTimer() {
     handleSetTimerFinish(t);
   } else if (t && t.kind === "cardioProgram") {
     const dayType = getDayType(state.selectedDate);
-    const option = (CARDIO_OPTIONS[dayType] || []).find((o) => o.key === t.optionKey);
+    const option = getDayCardioOptions(dayType).find((o) => o.key === t.optionKey);
     const nextIdx = t.phaseIndex + 1;
     if (option && nextIdx < option.phases.length) {
       startCardioProgramPhase(option, nextIdx, false);
@@ -1993,7 +2032,7 @@ function startCardioProgramPhase(option, phaseIndex, shouldRender = true) {
 
 function startCardioProgram() {
   const dayType = getDayType(state.selectedDate);
-  const options = CARDIO_OPTIONS[dayType] || [];
+  const options = getDayCardioOptions(dayType);
   const option = options.find((o) => o.key === getCardioChoice(dayType)) || options[0];
   if (!option) return;
   state.completed.cardio = false;
@@ -2335,6 +2374,9 @@ function attachHandlers() {
       else { el.blur(); if(document.activeElement) document.activeElement.blur(); }
     });
   });
+  document.querySelectorAll("[data-removephase]").forEach(el=>el.onclick=()=>{ const [option,key]=el.dataset.removephase.split("|"); removeCardioPhase(option,key); });
+  document.querySelectorAll("[data-addphase]").forEach(el=>el.onclick=()=>{ const [option,type]=el.dataset.addphase.split("|"); addCardioPhase(option,type); });
+  document.querySelectorAll("[data-phase-label]").forEach(el=>el.onchange=()=>{ const [option,key]=el.dataset.phaseLabel.split("|"); updateCardioPhaseLabel(option,key,el.value); });
   const cardioName=document.querySelector("[data-cardioname]"); if(cardioName){ cardioName.onchange=()=>saveCardioName(cardioName.getAttribute("data-cardioname"),cardioName.value); }
 
   document.querySelectorAll("[data-startex]").forEach((el) => {
@@ -2461,7 +2503,7 @@ function attachHandlers() {
     el.onclick = () => {
       const key = el.getAttribute("data-cardio");
       const dayType = getDayType(state.selectedDate);
-      const opt = CARDIO_OPTIONS[dayType].find((o) => o.key === getCardioChoice(dayType)) || CARDIO_OPTIONS[dayType][0];
+      const opt = getDayCardioOptions(dayType).find((o) => o.key === getCardioChoice(dayType)) || getDayCardioOptions(dayType)[0];
       const phase = opt.phases.find((p) => p.key === key);
       if (phase) startCardioPhaseTimer(phase.label, getCardioDurationSeconds(dayType, getCardioChoice(dayType), phase));
     };
@@ -2496,6 +2538,25 @@ function attachHandlers() {
     el.onchange = () => {
       const [dayType, optionKey, phaseKey] = el.getAttribute("data-cardioduration").split("|");
       updateCardioDuration(dayType, optionKey, phaseKey, el.value);
+    };
+  });
+
+  document.querySelectorAll("[data-removephase]").forEach(el => {
+    el.onclick = () => {
+      const [optionKey, phaseKey] = el.getAttribute("data-removephase").split("|");
+      removeCardioPhase(optionKey, phaseKey);
+    };
+  });
+  document.querySelectorAll("[data-addphase]").forEach(el => {
+    el.onclick = () => {
+      const [optionKey, type] = el.getAttribute("data-addphase").split("|");
+      addCardioPhase(optionKey, type);
+    };
+  });
+  document.querySelectorAll("[data-phase-label]").forEach(el => {
+    el.onchange = () => {
+      const [optionKey, phaseKey] = el.getAttribute("data-phase-label").split("|");
+      updateCardioPhaseLabel(optionKey, phaseKey, el.value);
     };
   });
 

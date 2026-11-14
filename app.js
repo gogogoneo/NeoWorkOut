@@ -1480,7 +1480,7 @@ function exerciseCardHTML(ex, index) {
     : `<div style="background:#14161A;border:1px solid #262B34;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:14px;color:#B8BFC9;line-height:1.5">
         ${disp.tip ? `💡 ${escapeHTML(disp.tip)}` : "💡 팁 없음"}
         ${disp.breath ? `<div style="margin-top:6px;color:#8FBFA8">🫁 호흡: ${escapeHTML(disp.breath)}</div>` : ""}
-        ${!isActive ? `<button data-edittip="${ex.id}" style="margin-top:8px;background:none;border:1px solid #333944;border-radius:6px;padding:5px 9px;color:#B8BFC9;font-size:12px;cursor:pointer">✏️ 운동 정보 수정${hasCustomTip ? " · 사용자 설정" : ""}</button>` : ""}
+        <button data-edittip="${ex.id}" style="margin-top:8px;background:none;border:1px solid #333944;border-radius:6px;padding:7px 11px;color:#F5C518;font-size:13px;font-weight:600;cursor:pointer">✏️ 운동 팁·이름·호흡 수정${hasCustomTip ? " · 사용자 설정" : ""}</button>
       </div>`;
 
   const subBtnHTML =

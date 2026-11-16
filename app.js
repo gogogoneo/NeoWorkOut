@@ -247,50 +247,6 @@ function applySettingsSnapshot(snapshot) {
   });
   location.reload(); // 메모리 설정을 안전하게 다시 읽음; 운동 기록은 유지
 }
-// v70: 사용자가 지정한 Config_Backup 폴더에 직접 저장 (지원 브라우저 한정).
-const BACKUP_DIR_DB = "neoworkout-backup-folder-v70";
-function backupDirStore(mode="readonly") {
-  return new Promise((resolve,reject) => {
-    const req=indexedDB.open(BACKUP_DIR_DB,1);
-    req.onupgradeneeded=()=>req.result.createObjectStore("folders");
-    req.onerror=()=>reject(req.error);
-    req.onsuccess=()=>resolve(req.result);
-  });
-}
-async function getSavedBackupFolder() {
-  try {
-    const db=await backupDirStore();
-    return await new Promise(resolve=>{
-      const tx=db.transaction("folders","readonly");
-      const req=tx.objectStore("folders").get("config");
-      req.onsuccess=()=>{resolve(req.result||null);db.close();};
-      req.onerror=()=>{resolve(null);db.close();};
-    });
-  } catch(e) { return null; }
-}
-async function rememberBackupFolder(handle) {
-  try {
-    const db=await backupDirStore();
-    await new Promise((resolve,reject)=>{
-      const tx=db.transaction("folders","readwrite");
-      tx.objectStore("folders").put(handle,"config");
-      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
-    });
-    db.close();
-  } catch(e) { console.warn("폴더 기억 실패",e); }
-}
-async function selectBackupFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("이 브라우저는 폴더 직접 저장을 지원하지 않습니다. 설정 백업 버튼으로 파일을 다운로드한 후 Config_Backup 폴더로 옮겨 주세요.");
-    return;
-  }
-  try {
-    const folder=await window.showDirectoryPicker({mode:"readwrite"});
-    if (folder.name !== "Config_Backup" && !confirm(`선택한 폴더는 '${folder.name}'입니다. Config_Backup 폴더가 맞나요?`)) return;
-    await rememberBackupFolder(folder);
-    alert("백업 폴더를 지정했습니다. 이후 설정 백업 시 이 폴더로 저장을 시도합니다.");
-  } catch(e) { if(e.name!=="AbortError") alert("폴더 지정 실패: "+e.message); }
-}
 function fallbackDownloadSettings(blob,filename) {
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download=filename;
@@ -302,19 +258,8 @@ async function downloadSettingsBackup() {
     const backup={app:"NeoWorkOut",format:"settings-v1",...readSettingsSnapshot()};
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
     const filename=`NeoWorkOut-settings-${new Date().toISOString().replace(/[:.]/g,"-")}.json`;
-    const folder=await getSavedBackupFolder();
-    if (folder && typeof folder.getFileHandle==="function") {
-      try {
-        const perm=await folder.queryPermission({mode:"readwrite"});
-        if (perm==="granted") {
-          const file=await folder.getFileHandle(filename,{create:true});
-          const stream=await file.createWritable();await stream.write(blob);await stream.close();
-          alert("설정 백업 완료: "+folder.name+"/"+filename);return;
-        }
-      } catch(e) { console.warn("지정 폴더 저장 실패",e); }
-    }
     fallbackDownloadSettings(blob,filename);
-    alert("설정 백업 파일을 다운로드했습니다. 저장 위치가 Config_Backup인지 확인해 주세요. 폴더 직접 저장을 원하면 '백업 폴더 지정'을 사용하세요.");
+    alert("설정 백업 파일을 다운로드했습니다. 다운로드(Download) 폴더에서 확인하세요.");
   } catch(e) { alert("백업 파일 생성에 실패했습니다: "+e.message); }
 }
 function undoSettingsChange() {
@@ -332,17 +277,15 @@ function settingsSafetyHTML() {
     <div style="height:12px"></div>
     <div style="display:flex;flex-wrap:wrap;gap:7px">
       <button id="settingsUndo" ${count ? "" : "disabled"} style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0;opacity:${count?1:.45}">↶ 이전 설정 복구${count?` (${count})`:""}</button>
-      <button id="settingsFolder" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">📁 백업 폴더 지정</button>
       <button id="settingsExport" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">↓ 설정 백업</button>
       <button id="settingsImport" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">↑ 백업 복원</button>
       <input id="settingsFile" type="file" accept=".json,application/json" style="display:none" />
     </div>
-    <div style="font-size:11px;color:#AEB7C4;margin-top:7px">설정 변경 전 최대 20개 자동 저장 · 폴더 직접 저장은 지원 브라우저에서만 가능 · 운동 기록은 별도 유지</div>
+    <div style="font-size:11px;color:#AEB7C4;margin-top:7px">설정 변경 전 최대 20개 자동 저장 · 백업 파일은 브라우저 다운로드 폴더에 저장 · 복원 시 다운로드 폴더에서 파일 선택 · 운동 기록은 별도 유지</div>
   </details>`;
 }
 function attachSettingsSafetyHandlers() {
   document.getElementById("settingsUndo")?.addEventListener("click", undoSettingsChange);
-  document.getElementById("settingsFolder")?.addEventListener("click", selectBackupFolder);
   document.getElementById("settingsExport")?.addEventListener("click", downloadSettingsBackup);
   const file = document.getElementById("settingsFile");
   document.getElementById("settingsImport")?.addEventListener("click", () => file?.click());

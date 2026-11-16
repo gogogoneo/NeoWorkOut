@@ -327,8 +327,9 @@ function undoSettingsChange() {
 }
 function settingsSafetyHTML() {
   const count = settingsHistory().length;
-  return `<section style="margin:8px 12px 12px;padding:11px;border:1px solid #46566B;border-radius:10px;background:#1B2229">
-    <div style="font-weight:800;font-size:13px;margin-bottom:8px;color:#F5C518">⚙ 설정 보호 · 자동 복구</div>
+  return `<details style="margin-top:30px;padding:11px;border:1px solid #343C47;border-radius:10px;background:#1B2229">
+    <summary style="font-weight:700;font-size:13px;color:#AEB7C4;cursor:pointer;list-style:auto">⚙ 설정 백업 · 복구 (필요할 때 펼치기)</summary>
+    <div style="height:12px"></div>
     <div style="display:flex;flex-wrap:wrap;gap:7px">
       <button id="settingsUndo" ${count ? "" : "disabled"} style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0;opacity:${count?1:.45}">↶ 이전 설정 복구${count?` (${count})`:""}</button>
       <button id="settingsFolder" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">📁 백업 폴더 지정</button>
@@ -337,7 +338,7 @@ function settingsSafetyHTML() {
       <input id="settingsFile" type="file" accept=".json,application/json" style="display:none" />
     </div>
     <div style="font-size:11px;color:#AEB7C4;margin-top:7px">설정 변경 전 최대 20개 자동 저장 · 폴더 직접 저장은 지원 브라우저에서만 가능 · 운동 기록은 별도 유지</div>
-  </section>`;
+  </details>`;
 }
 function attachSettingsSafetyHandlers() {
   document.getElementById("settingsUndo")?.addEventListener("click", undoSettingsChange);
@@ -1433,7 +1434,6 @@ function updateSummary(dateStr) {
 function render() {
   const app = document.getElementById("app");
   app.innerHTML = state.view === "calendar" ? calendarHTML() : dayHTML();
-  app.insertAdjacentHTML("afterbegin", settingsSafetyHTML());
   attachHandlers();
   attachSettingsSafetyHandlers();
   if (state.view === "day") {
@@ -1524,6 +1524,7 @@ function calendarHTML() {
         <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.lower.color};display:inline-block"></span> 유산소</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${DAY_INFO.rest.color};display:inline-block"></span> 휴식</span>
       </div>
+      ${settingsSafetyHTML()}
     </div>
     ${profileFormModalHTML()}`;
 }

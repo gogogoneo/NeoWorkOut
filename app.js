@@ -214,8 +214,92 @@ function lsGet(key, fallback) {
     return v ? JSON.parse(v) : fallback;
   } catch (e) { return fallback; }
 }
+// v69: 운동 기록과 구분하여 설정만 자동 스냅샷/파일 백업합니다.
+const SETTINGS_KEYS = ["wt_exercise_configs","wt_exercise_selection","wt_exercise_order","wt_cardio_selection","wt_cardio_choice","wt_cardio_config","wt_cardio_phase_edits_v66","wt_cardio_names","wt_exercise_tip_overrides","wt_substituted","wt_profile","wt_profile_form","wt_voice_enabled"];
+const SETTINGS_HISTORY_KEY = "wt_settings_history_v69";
+let settingsHistoryEnabled = false;
+let lastSettingsSnapshotAt = 0;
+function readSettingsSnapshot() {
+  const values = {};
+  SETTINGS_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) values[k] = JSON.parse(v); });
+  return { savedAt: new Date().toISOString(), values };
+}
+function settingsHistory() { return lsGet(SETTINGS_HISTORY_KEY, []); }
+function saveSettingsSnapshot() {
+  if (!settingsHistoryEnabled) return;
+  const now = Date.now();
+  if (now - lastSettingsSnapshotAt < 1200) return; // 한 번의 연속 변경을 하나로 묶음
+  try {
+    const list = settingsHistory();
+    const snapshot = readSettingsSnapshot();
+    if (list.length && JSON.stringify(list[0].values) === JSON.stringify(snapshot.values)) return;
+    list.unshift(snapshot);
+    localStorage.setItem(SETTINGS_HISTORY_KEY, JSON.stringify(list.slice(0, 20)));
+    lastSettingsSnapshotAt = now;
+  } catch(e) { console.warn("설정 자동 백업 실패", e); }
+}
+function applySettingsSnapshot(snapshot) {
+  if (!snapshot || !snapshot.values || typeof snapshot.values !== "object" || Array.isArray(snapshot.values)) throw Error("올바르지 않은 설정 파일입니다.");
+  settingsHistoryEnabled = false;
+  SETTINGS_KEYS.forEach(k => {
+    if (Object.prototype.hasOwnProperty.call(snapshot.values,k)) localStorage.setItem(k, JSON.stringify(snapshot.values[k]));
+    else localStorage.removeItem(k);
+  });
+  location.reload(); // 메모리 설정을 안전하게 다시 읽음; 운동 기록은 유지
+}
+function downloadSettingsBackup() {
+  try {
+    const backup = { app:"NeoWorkOut", format:"settings-v1", ...readSettingsSnapshot() };
+    const blob = new Blob([JSON.stringify(backup,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `NeoWorkOut-settings-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch(e) { alert("백업 파일 생성에 실패했습니다: " + e.message); }
+}
+function undoSettingsChange() {
+  const list = settingsHistory();
+  if (!list.length) { alert("복원할 이전 설정이 없습니다."); return; }
+  if (!confirm("직전 설정 변경을 되돌릴까요? 운동 기록은 유지됩니다.")) return;
+  const snapshot = list.shift();
+  localStorage.setItem(SETTINGS_HISTORY_KEY, JSON.stringify(list));
+  applySettingsSnapshot(snapshot);
+}
+function settingsSafetyHTML() {
+  const count = settingsHistory().length;
+  return `<section style="margin:8px 12px 12px;padding:11px;border:1px solid #46566B;border-radius:10px;background:#1B2229">
+    <div style="font-weight:800;font-size:13px;margin-bottom:8px;color:#F5C518">⚙ 설정 보호 · 자동 복구</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px">
+      <button id="settingsUndo" ${count ? "" : "disabled"} style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0;opacity:${count?1:.45}">↶ 이전 설정 복구${count?` (${count})`:""}</button>
+      <button id="settingsExport" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">↓ 설정 백업</button>
+      <button id="settingsImport" style="padding:9px;border-radius:7px;background:#344354;color:#fff;border:0">↑ 백업 복원</button>
+      <input id="settingsFile" type="file" accept=".json,application/json" style="display:none" />
+    </div>
+    <div style="font-size:11px;color:#AEB7C4;margin-top:7px">설정 변경 전 최대 20개 자동 저장 · 백업 파일은 기기에 보관 · 운동 기록은 별도 유지</div>
+  </section>`;
+}
+function attachSettingsSafetyHandlers() {
+  document.getElementById("settingsUndo")?.addEventListener("click", undoSettingsChange);
+  document.getElementById("settingsExport")?.addEventListener("click", downloadSettingsBackup);
+  const file = document.getElementById("settingsFile");
+  document.getElementById("settingsImport")?.addEventListener("click", () => file?.click());
+  file?.addEventListener("change", async () => {
+    if (!file.files?.[0]) return;
+    try {
+      const data = JSON.parse(await file.files[0].text());
+      if (data.app !== "NeoWorkOut" || data.format !== "settings-v1" || !data.values || !Object.keys(data.values).every(k=>SETTINGS_KEYS.includes(k))) throw Error("NeoWorkOut 설정 백업 파일이 아닙니다.");
+      if (!confirm("백업 파일의 설정으로 현재 설정을 교체할까요? 운동 기록은 유지됩니다.")) return;
+      saveSettingsSnapshot();
+      applySettingsSnapshot(data);
+    } catch(e) { alert("설정 복원 실패: " + e.message); }
+  });
+}
 function lsSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  try {
+    if (SETTINGS_KEYS.includes(key) && settingsHistoryEnabled && JSON.stringify(lsGet(key,null)) !== JSON.stringify(value)) saveSettingsSnapshot();
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) { console.warn("설정 저장 실패",e); }
 }
 
 // ---------- State ----------
@@ -1288,7 +1372,9 @@ function updateSummary(dateStr) {
 function render() {
   const app = document.getElementById("app");
   app.innerHTML = state.view === "calendar" ? calendarHTML() : dayHTML();
+  app.insertAdjacentHTML("afterbegin", settingsSafetyHTML());
   attachHandlers();
+  attachSettingsSafetyHandlers();
   if (state.view === "day") {
     const currentSession = getWorkoutSession();
     state.sessionStart = currentSession?.start && !currentSession?.end ? currentSession.start : null;
@@ -2618,3 +2704,4 @@ loadDayState();
 state.view = "day";
 history.replaceState({ view: "day", date: state.selectedDate, subview: "list" }, "", "");
 render();
+settingsHistoryEnabled = true;

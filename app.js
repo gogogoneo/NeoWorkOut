@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=77", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=79", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -90,6 +90,10 @@ const EXERCISES = {
       { value: 10, reps: 15, rest: 45 }, { value: 10, reps: 12, rest: 45 }, { value: 10, reps: 12, rest: 45 }
     ] },
 
+    { id: "cable_hammer", name: "케이블 해머 컬", unit: "kg", tip: "하단 케이블에 로프를 연결하고 손바닥이 서로 마주 보게 잡으세요. 손목을 중립으로 유지하고 팔꿈치를 몸통 옆에 고정한 채 반동 없이 말아 올립니다. 내려갈 때 천천히 버티세요.", breath: "말아 올릴 때 내쉬고, 내릴 때 들이쉬세요", substitutes: [], sets: [
+      { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }, { value: 20, reps: 12, rest: 60 }
+    ] },
+
     // 기존 덤벨 이두 컬은 케이블 이두 컬로 교체했지만 선택 운동으로 보존 (기본 OFF)
     { id: "dumbbell_bicep", name: "덤벨 이두 컬", unit: "kg", tip: "팔꿈치를 몸통 옆에 고정하고 어깨와 허리의 반동 없이 덤벨을 말아 올리세요. 꼭대기에서 이두를 수축하고 내려갈 때 천천히 버팁니다.", breath: "들어올릴 때 내쉬고, 천천히 내릴 때 들이쉬세요", substitutes: [], sets: [
       { value: 6, reps: 15, rest: 45 }, { value: 6, reps: 12, rest: 45 }, { value: 6, reps: 12, rest: 45 }
@@ -134,7 +138,7 @@ const EXERCISES = {
 const CARDIO_OPTIONAL_WEIGHT_IDS = [
   "bench", "dips", "incline", "flye", "cablerow", "assisted_chinup", "latpull",
   "legpress", "rdl", "legextension", "legcurl", "squat", "bulgarian", "calfraise", "ohp", "lateral", "reardelt",
-  "triceps_pushdown", "triceps_overhead", "bicep", "dumbbell_bicep"
+  "triceps_pushdown", "triceps_overhead", "bicep", "cable_hammer", "dumbbell_bicep"
 ];
 EXERCISES.lower.push(
   ...EXERCISES.upper.filter((ex) => CARDIO_OPTIONAL_WEIGHT_IDS.includes(ex.id))
@@ -361,7 +365,7 @@ const state = {
   orderMoveSelected: null, // 순서 변경용 선택 항목(저장 불필요)
 };
 
-const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep", "abdominal", "abdominal_cardio"];
+const DEFAULT_UNSELECTED = ["flye", "woodchop", "squat", "bulgarian", "calfraise", "latpull", "dumbbell_bicep", "cable_hammer", "abdominal", "abdominal_cardio"];
 
 // v16 루틴 마이그레이션: 기존에 저장된 중량은 가능한 범위에서 유지하되
 // 새 3세트/2세트 구성에 맞춰 세트 수와 선택 상태를 한 번 정리합니다.
@@ -1160,112 +1164,77 @@ function removeSet(ex, setIdx) {
 // 이어 읽고, 현재 utterance 참조를 유지해 GC로 음성이 끊기는 현상을 줄인다.
 let voiceRunId = 0;
 let activeUtterance = null;
-let voiceChunks = [];
-// Load available voices early, and resume speech during a real user gesture.
-if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  document.addEventListener("click", () => {
-    if (state.voiceEnabled) window.speechSynthesis.resume();
-  }, true);
-}
-
-function splitSpeechText(text) {
-  const normalized = String(text || "").replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
-
-  // 문장부호 기준으로 먼저 나누고, 너무 긴 문장은 쉼표 기준으로 한 번 더 나눈다.
-  const sentences = normalized.match(/[^.!?]+[.!?]?/g) || [normalized];
-  const chunks = [];
-  sentences.forEach((raw) => {
-    const sentence = raw.trim();
-    if (!sentence) return;
-    if (sentence.length <= 70) {
-      chunks.push(sentence);
-      return;
-    }
-    const parts = sentence.replace(/([,，])/g, "$1|").split("|").map((x) => x.trim()).filter(Boolean);
-    let buf = "";
-    parts.forEach((part) => {
-      if (buf && (buf + " " + part).length > 70) {
-        chunks.push(buf.trim());
-        buf = part;
-      } else {
-        buf = buf ? `${buf} ${part}` : part;
-      }
-    });
-    if (buf.trim()) chunks.push(buf.trim());
-  });
-  return chunks;
-}
-
-function stopSpeech() {
-  voiceRunId += 1;
-  voiceChunks = [];
-  activeUtterance = null;
+let audioCtx = null;
+let voiceStatus = "";
+function unlockAudio() {
   try {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-  } catch (e) {}
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state !== "running") audioCtx.resume().catch(()=>{});
+  } catch(e) {}
 }
-
-function speakNextChunk(runId, koVoice) {
-  if (runId !== voiceRunId || !state.voiceEnabled || !window.speechSynthesis) return;
-  const chunk = voiceChunks.shift();
-  if (!chunk) {
-    activeUtterance = null;
-    return;
-  }
-
-  const u = new SpeechSynthesisUtterance(chunk);
-  activeUtterance = u;
-  u.lang = "ko-KR";
-  u.rate = 0.96;
-  u.pitch = 1.0;
-  u.volume = 1.0;
-  if (koVoice) u.voice = koVoice;
-
-  u.onend = () => {
-    if (runId !== voiceRunId) return;
-    activeUtterance = null;
-    // Android에서 다음 utterance를 즉시 넣을 때 누락되는 경우가 있어 아주 짧게 띄운다.
-    setTimeout(() => speakNextChunk(runId, koVoice), 80);
+document.addEventListener("click", unlockAudio, true);
+function tone() {
+  unlockAudio();
+  if (!audioCtx) return;
+  const play = () => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    const t = audioCtx.currentTime;
+    o.frequency.value = 880; g.gain.setValueAtTime(0.18,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.26);
   };
-  u.onerror = (event) => {
-    if (runId !== voiceRunId) return;
-    activeUtterance = null;
-    // cancel/interrupted는 새 안내가 시작된 정상 상황일 수 있다.
-    if (event && (event.error === "canceled" || event.error === "interrupted")) return;
-    setTimeout(() => speakNextChunk(runId, koVoice), 120);
-  };
-
-  try { window.speechSynthesis.resume(); window.speechSynthesis.speak(u); } catch (e) {
-    activeUtterance = null;
-    setTimeout(() => speakNextChunk(runId, koVoice), 120);
-  }
+  if (audioCtx.state === "running") play(); else audioCtx.resume().then(play).catch(()=>{});
 }
-
+function reportVoice(msg) {
+  voiceStatus = msg;
+  const el = document.getElementById("voiceStatus");
+  if (el) el.textContent = msg;
+}
+function stopSpeech() {
+  voiceRunId++;
+  activeUtterance = null;
+  try { window.speechSynthesis?.cancel(); } catch(e) {}
+}
 function speak(text) {
   if (!state.voiceEnabled) return;
+  const synth = window.speechSynthesis;
+  const id = ++voiceRunId;
+  let started = false, ended = false;
+  const fail = (reason) => {
+    if (id !== voiceRunId || ended) return;
+    ended = true;
+    try { synth?.cancel(); } catch(e) {}
+    reportVoice("음성 실패: " + reason + " / 알림음 대체"); tone();
+  };
+  if (!synth || !window.SpeechSynthesisUtterance) { fail("브라우저 미지원"); return; }
   try {
-    if (!window.speechSynthesis) return;
-    stopSpeech();
-    const chunks = splitSpeechText(text);
-    if (!chunks.length) return;
-    const runId = voiceRunId;
-    voiceChunks = chunks;
-
-    // 일부 Android 기기는 voices가 늦게 로드되므로, 없어도 ko-KR lang으로 바로 재생한다.
-    const voices = window.speechSynthesis.getVoices() || [];
-    const koVoice = voices.find((v) => v.lang === "ko-KR") || voices.find((v) => v.lang && v.lang.startsWith("ko"));
-    speakNextChunk(runId, koVoice);
-  } catch (e) { console.warn("Voice guidance failed", e); }
+    if (synth.speaking || synth.pending) synth.cancel();
+    const u = new SpeechSynthesisUtterance(String(text));
+    activeUtterance = u;
+    u.lang = "ko-KR"; u.rate = 0.96; u.volume = 1;
+    const voices = synth.getVoices();
+    const ko = voices.find(v => /^ko([-_]|$)/i.test(v.lang));
+    if (ko) u.voice = ko;
+    u.onstart = () => { if (id === voiceRunId && !ended) { started = true; reportVoice("음성 재생 시작"); } };
+    u.onend = () => { if (id === voiceRunId && !ended) { ended = true; activeUtterance = null; reportVoice("음성 재생 완료"); } };
+    u.onerror = e => fail(e.error || "TTS 오류");
+    synth.resume(); synth.speak(u);
+    setTimeout(() => { if (!started) fail("재생 시작 응답 없음"); }, 3500);
+  } catch(e) { fail(e.message || "TTS 오류"); }
 }
-
 function toggleVoice() {
   state.voiceEnabled = !state.voiceEnabled;
   lsSet("wt_voice_enabled", state.voiceEnabled);
-  if (!state.voiceEnabled) stopSpeech();
+  if (!state.voiceEnabled) { stopSpeech(); reportVoice(""); }
   else speak("음성 안내를 시작합니다.");
   render();
+}
+function testVoice() {
+  tone();
+  if (!state.voiceEnabled) { reportVoice("음성 안내를 켜 주세요. 알림음만 테스트합니다."); return; }
+  speak("음성 안내 테스트입니다.");
 }
 
 function announceSet(ex, setIdx) {
@@ -1860,7 +1829,7 @@ ${allExercises
       <div style="padding:20px 16px 12px;border-bottom:1px solid #262B34">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <button class="navBtn" id="backToCal" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px">‹ 달력</button>
-          <button id="toggleVoice" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px;background:#1E222A;border:1px solid #262B34;border-radius:8px;color:${state.voiceEnabled ? "#F5C518" : "#8A93A3"};cursor:pointer;align-items:center">${state.voiceEnabled ? "🔊" : "🔇"} 음성 안내 ${state.voiceEnabled ? "켜짐" : "꺼짐"}</button>
+          <button id="toggleVoice" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px;background:#1E222A;border:1px solid #262B34;border-radius:8px;color:${state.voiceEnabled ? "#F5C518" : "#8A93A3"};cursor:pointer;align-items:center">${state.voiceEnabled ? "🔊" : "🔇"} 음성 안내 ${state.voiceEnabled ? "켜짐" : "꺼짐"}</button><button id="testVoice" style="width:auto;padding:4px 8px;font-size:12px">소리 테스트</button><span id="voiceStatus" style="font-size:11px;color:#8A93A3"></span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
@@ -2310,6 +2279,8 @@ function attachHandlers() {
   };
 
   document.getElementById("toggleVoice").onclick = toggleVoice;
+  document.getElementById("testVoice").onclick = testVoice;
+  reportVoice(voiceStatus);
   document.getElementById("resetDay").onclick = () => {
     state.completed = {};
     saveProgress();

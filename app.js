@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=46", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=77", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -1161,6 +1161,13 @@ function removeSet(ex, setIdx) {
 let voiceRunId = 0;
 let activeUtterance = null;
 let voiceChunks = [];
+// Load available voices early, and resume speech during a real user gesture.
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  document.addEventListener("click", () => {
+    if (state.voiceEnabled) window.speechSynthesis.resume();
+  }, true);
+}
 
 function splitSpeechText(text) {
   const normalized = String(text || "").replace(/\s+/g, " ").trim();
@@ -1213,6 +1220,7 @@ function speakNextChunk(runId, koVoice) {
   u.lang = "ko-KR";
   u.rate = 0.96;
   u.pitch = 1.0;
+  u.volume = 1.0;
   if (koVoice) u.voice = koVoice;
 
   u.onend = () => {
@@ -1229,7 +1237,7 @@ function speakNextChunk(runId, koVoice) {
     setTimeout(() => speakNextChunk(runId, koVoice), 120);
   };
 
-  try { window.speechSynthesis.speak(u); } catch (e) {
+  try { window.speechSynthesis.resume(); window.speechSynthesis.speak(u); } catch (e) {
     activeUtterance = null;
     setTimeout(() => speakNextChunk(runId, koVoice), 120);
   }
@@ -1248,14 +1256,15 @@ function speak(text) {
     // 일부 Android 기기는 voices가 늦게 로드되므로, 없어도 ko-KR lang으로 바로 재생한다.
     const voices = window.speechSynthesis.getVoices() || [];
     const koVoice = voices.find((v) => v.lang === "ko-KR") || voices.find((v) => v.lang && v.lang.startsWith("ko"));
-    setTimeout(() => speakNextChunk(runId, koVoice), 80);
-  } catch (e) {}
+    speakNextChunk(runId, koVoice);
+  } catch (e) { console.warn("Voice guidance failed", e); }
 }
 
 function toggleVoice() {
   state.voiceEnabled = !state.voiceEnabled;
   lsSet("wt_voice_enabled", state.voiceEnabled);
   if (!state.voiceEnabled) stopSpeech();
+  else speak("음성 안내를 시작합니다.");
   render();
 }
 

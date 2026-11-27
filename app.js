@@ -1,7 +1,7 @@
 // ---------- Service worker registration ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js?v=79", { updateViaCache: "none" }).catch(() => {});
+    navigator.serviceWorker.register("sw.js?v=80", { updateViaCache: "none" }).catch(() => {});
   });
 }
 
@@ -1231,11 +1231,6 @@ function toggleVoice() {
   else speak("음성 안내를 시작합니다.");
   render();
 }
-function testVoice() {
-  tone();
-  if (!state.voiceEnabled) { reportVoice("음성 안내를 켜 주세요. 알림음만 테스트합니다."); return; }
-  speak("음성 안내 테스트입니다.");
-}
 
 function announceSet(ex, setIdx) {
   const disp = getExDisplay(ex);
@@ -1829,7 +1824,7 @@ ${allExercises
       <div style="padding:20px 16px 12px;border-bottom:1px solid #262B34">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <button class="navBtn" id="backToCal" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px">‹ 달력</button>
-          <button id="toggleVoice" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px;background:#1E222A;border:1px solid #262B34;border-radius:8px;color:${state.voiceEnabled ? "#F5C518" : "#8A93A3"};cursor:pointer;align-items:center">${state.voiceEnabled ? "🔊" : "🔇"} 음성 안내 ${state.voiceEnabled ? "켜짐" : "꺼짐"}</button><button id="testVoice" style="width:auto;padding:4px 8px;font-size:12px">소리 테스트</button><span id="voiceStatus" style="font-size:11px;color:#8A93A3"></span>
+          <button id="toggleVoice" style="width:auto;padding:4px 10px;display:inline-flex;gap:4px;font-size:13px;background:#1E222A;border:1px solid #262B34;border-radius:8px;color:${state.voiceEnabled ? "#F5C518" : "#8A93A3"};cursor:pointer;align-items:center">${state.voiceEnabled ? "🔊" : "🔇"} 음성 안내 ${state.voiceEnabled ? "켜짐" : "꺼짐"}</button><span id="voiceStatus" style="font-size:11px;color:#8A93A3"></span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
@@ -2279,7 +2274,6 @@ function attachHandlers() {
   };
 
   document.getElementById("toggleVoice").onclick = toggleVoice;
-  document.getElementById("testVoice").onclick = testVoice;
   reportVoice(voiceStatus);
   document.getElementById("resetDay").onclick = () => {
     state.completed = {};
